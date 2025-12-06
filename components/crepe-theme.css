@@ -15,3 +15,41 @@
   width: 100% !important;
   padding: 0 !important;
 }
+
+/* Dark mode support for Crepe Editor using frame-dark theme variables */
+.dark .milkdown {
+  --crepe-color-background: #111827;
+  --crepe-color-on-background: #e6e6e6;
+  --crepe-color-surface: #121212;
+  --crepe-color-surface-low: #1c1c1c;
+  --crepe-color-on-surface: #d1d1d1;
+  --crepe-color-on-surface-variant: #a9a9a9;
+  --crepe-color-outline: #757575;
+  --crepe-color-primary: #b5b5b5;
+  --crepe-color-secondary: #4d4d4d;
+  --crepe-color-on-secondary: #d6d6d6;
+  --crepe-color-inverse: #e5e5e5;
+  --crepe-color-on-inverse: #2a2a2a;
+  --crepe-color-inline-code: #ff6666;
+  --crepe-color-error: #ff6666;
+  --crepe-color-hover: #232323;
+  --crepe-color-selected: #2f2f2f;
+  --crepe-color-inline-area: #2b2b2b;
+
+  --crepe-shadow-1:
+    0px 1px 2px 0px rgba(255, 255, 255, 0.3),
+    0px 1px 3px 1px rgba(255, 255, 255, 0.15);
+  --crepe-shadow-2:
+    0px 1px 2px 0px rgba(255, 255, 255, 0.3),
+    0px 2px 6px 2px rgba(255, 255, 255, 0.15);
+}
+
+/* Override background to match app dark theme if needed, or keep frame-dark default */
+/* For better integration, let's make the main background transparent so it takes the app's background */
+.dark .crepe-editor {
+  --crepe-color-background: transparent; 
+}
+/* But milkdown uses this variable for its internal container too, so be careful. */
+/* Let's stick to the frame-dark values first. */
+
+

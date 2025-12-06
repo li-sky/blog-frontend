@@ -1,6 +1,6 @@
 import { AuthResponse, Comment, CommentListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User } from '../types';
 
-const BASE_URL = '/api/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');

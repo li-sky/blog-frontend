@@ -4,8 +4,7 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #f9fafb;
-  color: #111827;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300;
 }
 
 .serif {
@@ -21,12 +20,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
+  @apply bg-gray-300 dark:bg-gray-700 rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  @apply bg-gray-400 dark:bg-gray-600;
 }
 
 @keyframes slideUpFade {

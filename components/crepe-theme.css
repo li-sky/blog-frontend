@@ -1,0 +1,17 @@
+.crepe-editor {
+  /* border: 1px solid #e2e8f0; */
+  /* border-radius: 0.75rem; */
+  /* overflow: hidden; */
+  background-color: transparent;
+  /* box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05); */
+}
+
+.crepe-editor .crepe-root {
+  min-height: 500px;
+}
+
+.crepe-editor .crepe-root .ProseMirror {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}

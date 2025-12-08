@@ -1,6 +1,6 @@
 import path from "path";
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import { visualizer } from "rollup-plugin-visualizer";
 import viteCompression from "vite-plugin-compression";
 
@@ -37,26 +37,36 @@ export default defineConfig({
       },
     },
 
-    rollupOptions: {
-      output: {
-        chunkFileNames: "static/js/[name]-[hash].js",
-        entryFileNames: "static/js/[name]-[hash].js",
-        assetFileNames: "static/[ext]/[name]-[hash].[ext]",
+    // rollupOptions: {
+    //   output: {
+    //     chunkFileNames: "static/js/[name]-[hash].js",
+    //     entryFileNames: "static/js/[name]-[hash].js",
+    //     assetFileNames: "static/[ext]/[name]-[hash].[ext]",
 
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (
-              id.includes("react") ||
-              id.includes("react-dom") ||
-              id.includes("react-router")
-            ) {
-              return "react-vendor";
-            }
-            return "vendor";
-          }
-        },
-      },
-    },
+    //     manualChunks(id) {
+    //       if (id.includes("node_modules")) {
+    //         // React and core dependencies must be in a separate chunk
+    //         if (
+    //           id.includes("react") ||
+    //           id.includes("react-dom") ||
+    //           id.includes("react-router")
+    //         ) {
+    //           return "react-vendor";
+    //         }
+    //         // Animation library depends on React, so needs its own chunk after react
+    //         if (id.includes("framer-motion")) {
+    //           return "framer-vendor";
+    //         }
+    //         // Milkdown and related editors
+    //         if (id.includes("@milkdown") || id.includes("milkdown")) {
+    //           return "editor-vendor";
+    //         }
+    //         // Everything else
+    //         return "vendor";
+    //       }
+    //     },
+    //   },
+    // },
   },
 
   resolve: {

@@ -199,20 +199,20 @@ export const PostDetail: React.FC = () => {
 
         <div className="space-y-6">
           {comments.length === 0 ? (
-            <p className="text-gray-500 italic text-center py-8">还没人锐评。成为第一个分享你想法的人吧！</p>
+            <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">还没人锐评。成为第一个分享你想法的人吧！</p>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+              <div key={comment.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md dark:hover:shadow-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3">
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold mr-3">
                       {(comment.user?.username || comment.userId.toString()).charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {comment.user?.username || `User #${comment.userId}`}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(comment.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -220,14 +220,14 @@ export const PostDetail: React.FC = () => {
                   {user && (user.id === comment.userId || user.roles?.includes('admin')) && (
                     <button
                       onClick={() => handleDeleteComment(comment.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50"
+                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
                       title="Delete comment"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-                <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                   {comment.body}
                 </div>
               </div>

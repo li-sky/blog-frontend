@@ -236,7 +236,7 @@ export const Admin: React.FC = () => {
             </div>
 
             {/* Editor */}
-            <div className="min-h-[500px] pb-24 max-w-7xl mx-auto">
+            <div className="min-h-[500px] max-w-7xl mx-auto">
               <CrepeEditor
                 key={editorSeed}
                 value={content}

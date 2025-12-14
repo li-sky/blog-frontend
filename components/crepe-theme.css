@@ -49,6 +49,17 @@
 .dark .crepe-editor {
   --crepe-color-background: transparent; 
 }
+
+/* Override default milkdown padding which is too large on mobile */
+.milkdown .ProseMirror {
+  padding: 1.5rem !important;
+}
+
+@media (min-width: 768px) {
+  .milkdown .ProseMirror {
+    padding: 3rem 4rem !important;
+  }
+}
 /* But milkdown uses this variable for its internal container too, so be careful. */
 /* Let's stick to the frame-dark values first. */
 

@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Home } from '../pages/Home';
 import { Admin } from '../pages/Admin';
+import { Settings } from '../pages/Settings';
 import { PostDetail } from '../pages/PostDetail';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
@@ -29,6 +30,7 @@ export const AnimatedRoutes: React.FC = () => {
         <Route path="/" element={<PageTransition><Home /></PageTransition>} />
         <Route path="/post/:id" element={<PageTransition><PostDetail /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
+        <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
       </Routes>

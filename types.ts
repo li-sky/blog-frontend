@@ -63,3 +63,18 @@ export interface CommentListResponse {
   items: Comment[];
   total: number;
 }
+
+export interface Setting {
+  key: string;
+  value: string;
+  description: string;
+}
+
+export interface SettingsResponse {
+  items: Setting[];
+}
+
+export interface UpdateSettingRequest {
+  value: string;
+  description?: string;
+}

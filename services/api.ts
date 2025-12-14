@@ -1,4 +1,4 @@
-import { AuthResponse, Comment, CommentListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User } from '../types';
+import { AuthResponse, Comment, CommentListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -216,6 +216,20 @@ export const api = {
       const res = await fetch(`${BASE_URL}/posts/${id}`, {
         method: 'DELETE',
         headers: getHeaders(),
+      });
+      return handleResponse(res);
+    }
+  },
+  settings: {
+    getAll: async (): Promise<SettingsResponse> => {
+      const res = await fetch(`${BASE_URL}/settings`);
+      return handleResponse(res);
+    },
+    update: async (key: string, data: UpdateSettingRequest): Promise<Setting> => {
+      const res = await fetch(`${BASE_URL}/settings/${key}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
       });
       return handleResponse(res);
     }

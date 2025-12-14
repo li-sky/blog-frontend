@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PenTool, User, Sparkles, Sun, Moon, Monitor } from 'lucide-react';
+import { PenTool, User, Sparkles, Sun, Moon, Monitor, Settings } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -83,6 +83,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 家
               </Link>
               {isLoggedIn ? (
+                <>
                 <Link 
                   to="/admin" 
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
@@ -94,6 +95,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <PenTool className="w-4 h-4 mr-1.5" />
                   汽车仪表
                 </Link>
+                <Link 
+                  to="/settings" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
+                    isActive('/settings') 
+                      ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Settings className="w-4 h-4 mr-1.5" />
+                  设置
+                </Link>
+                </>
               ) : (
                 <>
                   <Link 

@@ -136,8 +136,12 @@ export const api = {
     },
   },
   comments: {
-    list: async (postId: number | string): Promise<CommentListResponse> => {
-      const res = await fetch(`${BASE_URL}/posts/${postId}/comments`);
+    list: async (postId: number | string, params: { limit?: number; offset?: number } = {}): Promise<CommentListResponse> => {
+      const query = new URLSearchParams({ 
+        limit: (params.limit || 20).toString(), 
+        offset: (params.offset || 0).toString() 
+      });
+      const res = await fetch(`${BASE_URL}/posts/${postId}/comments?${query}`);
       const data = await handleResponse(res);
       return normalizeCommentList(data);
     },

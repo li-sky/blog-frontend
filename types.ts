@@ -2,6 +2,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  emailSha256?: string;
   roles: string[];
   createdAt: string;
 }

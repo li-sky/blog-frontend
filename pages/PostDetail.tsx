@@ -205,9 +205,17 @@ export const PostDetail: React.FC = () => {
               <div key={comment.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md dark:hover:shadow-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold mr-3">
-                      {(comment.user?.username || comment.userId.toString()).charAt(0).toUpperCase()}
-                    </div>
+                    {comment.user && comment.user.emailSha256 ? (
+                      <img 
+                        src={`https://www.gravatar.com/avatar/${comment.user.emailSha256}?d=identicon`} 
+                        alt={comment.user.username} 
+                        className="h-8 w-8 rounded-full mr-3"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold mr-3">
+                        {(comment.user?.username || comment.userId.toString()).charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {comment.user?.username || `User #${comment.userId}`}

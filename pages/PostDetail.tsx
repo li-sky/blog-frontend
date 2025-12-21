@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
 import { unified } from 'unified';
@@ -23,10 +23,35 @@ export const PostDetail: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentBody, setCommentBody] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
     if (!post?.content) return;
+
+    const CustomImage = (props: any) => {
+      let src = props.src;
+      // Only append params if it's a local image path starting with /images/
+      if (src && src.startsWith('/images/')) {
+        // Check if it already has params to avoid duplication if re-rendered
+        if (!src.includes('?')) {
+           src = `${src}?w=1200&format=webp`;
+        }
+      }
+
+      return (
+        <img
+          {...props}
+          src={src}
+          className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02]"
+          onClick={() => {
+            // Remove query parameters to get the original image
+            const originalSrc = props.src.split('?')[0];
+            setZoomedImage(originalSrc);
+          }}
+        />
+      );
+    };
 
     unified()
       .use(remarkParse)
@@ -34,7 +59,14 @@ export const PostDetail: React.FC = () => {
       .use(remarkMath)
       .use(remarkRehype)
       .use(rehypeKatex)
-      .use(rehypeReact, { Fragment, jsx, jsxs } as any)
+      .use(rehypeReact, { 
+        Fragment, 
+        jsx, 
+        jsxs,
+        components: {
+          img: CustomImage
+        }
+      } as any)
       .process(post.content)
       .then((file) => {
         setContent(file.result);
@@ -247,6 +279,26 @@ export const PostDetail: React.FC = () => {
           )}
         </div>
       </section>
+
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-2 transition-colors"
+            onClick={() => setZoomedImage(null)}
+          >
+            <X size={32} />
+          </button>
+          <img 
+            src={zoomedImage} 
+            alt="Zoomed content" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </article>
   );
 };

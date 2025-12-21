@@ -30,13 +30,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   return (
     <div 
       onClick={() => onClick(post.id)}
-      className="group bg-white dark:bg-gray-800 block p-6 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer break-inside-avoid mb-6"
+      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer break-inside-avoid mb-6 overflow-hidden"
     >
       {imageUrl && (
-        <div className="mb-6 overflow-hidden rounded-lg">
+        <div className="w-full overflow-hidden">
            <img 
              className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500" 
-             src={imageUrl} 
+             src={imageUrl.startsWith('/images/') && !imageUrl.includes('?') ? `${imageUrl}?w=600&format=webp` : imageUrl} 
              alt={post.title} 
              onError={(e) => {
                (e.target as HTMLImageElement).style.display = 'none';
@@ -45,25 +45,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         </div>
       )}
       
-      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
-          <span className="flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {new Date(post.createdAt).toLocaleDateString()}
-          </span>
-          {post.status === 'draft' && (
-            <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs px-2 py-0.5 rounded-full">
-              草稿
+      <div className="p-6">
+        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
+            <span className="flex items-center">
+              <Calendar className="w-3 h-3 mr-1" />
+              {new Date(post.createdAt).toLocaleDateString()}
             </span>
-          )}
-      </div>
+            {post.status === 'draft' && (
+              <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs px-2 py-0.5 rounded-full">
+                草稿
+              </span>
+            )}
+        </div>
 
-      <h5 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-serif font-extrabold">
-        {post.title}
-      </h5>
-      
-      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-        {displaySummary}
-      </p>
+        <h5 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-serif font-extrabold">
+          {post.title}
+        </h5>
+        
+        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+          {displaySummary}
+        </p>
+      </div>
 
     </div>
   );

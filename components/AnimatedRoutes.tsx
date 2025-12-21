@@ -7,6 +7,7 @@ import { Settings } from '../pages/Settings';
 import { PostDetail } from '../pages/PostDetail';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
+import { Users } from '../pages/Users';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -26,7 +27,7 @@ export const AnimatedRoutes: React.FC = () => {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
         <Route path="/" element={<PageTransition><Home /></PageTransition>} />
         <Route path="/post/:id" element={<PageTransition><PostDetail /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />

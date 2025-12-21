@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Crepe } from '@milkdown/crepe';
+import { api } from '../services/api';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './crepe-theme.css';
@@ -20,6 +21,14 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
     const crepe = new Crepe({
       root: containerRef.current,
       defaultValue: value || '',
+      featureConfigs: {
+        [Crepe.Feature.ImageBlock]: {
+          onUpload: async (file: File) => {
+            const image = await api.images.upload(file);
+            return image.url;
+          },
+        },
+      },
     });
 
     crepeRef.current = crepe;

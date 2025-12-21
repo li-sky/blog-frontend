@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Post, PostPayload } from '../types';
+import { Post, PostPayload, User } from '../types';
 import { Button } from '../components/ui/Button';
-import { Save, Trash2, Globe, FileText, Plus, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Save, Trash2, Globe, FileText, Plus, ArrowLeft, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { CrepeEditor } from '../components/CrepeEditor';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -12,6 +12,7 @@ export const Admin: React.FC = () => {
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Editor State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -23,12 +24,24 @@ export const Admin: React.FC = () => {
 
   // Check auth
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    fetchPosts();
+    const checkAuth = async () => {
+      try {
+        const user = await api.auth.me();
+        setCurrentUser(user);
+        
+        // Check if user has editor role (or admin)
+        const isEditor = user.roles.includes('editor') || user.roles.includes('admin');
+        if (!isEditor) {
+          navigate('/'); // Redirect non-editors
+          return;
+        }
+        
+        fetchPosts();
+      } catch (e) {
+        navigate('/login');
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
   const fetchPosts = async () => {
@@ -53,14 +66,23 @@ export const Admin: React.FC = () => {
     setView('editor');
   };
 
-  const handleEdit = (post: Post) => {
-    setEditingId(post.id);
-    setTitle(post.title);
-    setSummary(post.summary);
-    setContent(post.content);
-    setIsSummaryOpen(!!post.summary);
-    setEditorSeed((prev) => prev + 1);
-    setView('editor');
+  const handleEdit = async (post: Post) => {
+    try {
+      setIsLoading(true);
+      const fullPost = await api.posts.getOne(post.id);
+      setEditingId(fullPost.id);
+      setTitle(fullPost.title);
+      setSummary(fullPost.summary);
+      setContent(fullPost.content);
+      setIsSummaryOpen(!!fullPost.summary);
+      setEditorSeed((prev) => prev + 1);
+      setView('editor');
+    } catch (e) {
+      console.error("Failed to fetch post details", e);
+      alert("Failed to load post content. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -113,12 +135,22 @@ export const Admin: React.FC = () => {
     navigate('/login');
   };
 
+  if (!currentUser) return null;
+
   if (view === 'list') {
     return (
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <div className="flex gap-4">
+            {currentUser.roles.includes('admin') && (
+              <Link to="/settings">
+                <Button variant="outline" className="flex items-center">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </Link>
+            )}
             <Button variant="outline" onClick={handleLogout}>Logout</Button>
             <Button onClick={handleCreateNew} icon={<Plus className="w-4 h-4"/>}>New Post</Button>
           </div>

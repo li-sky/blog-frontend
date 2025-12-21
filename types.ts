@@ -12,6 +12,21 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface Image {
+  id: number;
+  filename: string;
+  originalName: string;
+  alt?: string;
+  mimeType: string;
+  size: number;
+  width: number;
+  height: number;
+  url: string;
+  userId: number;
+  storageBackend: string;
+  createdAt: string;
+}
+
 export type PostStatus = 'draft' | 'published';
 
 export interface Post {
@@ -23,6 +38,12 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   slug?: string;
+  userId?: number;
+  user?: {
+    id: number;
+    username: string;
+    emailSha256?: string;
+  };
 }
 
 export interface PostListResponse {
@@ -63,6 +84,47 @@ export interface Comment {
 export interface CommentListResponse {
   items: Comment[];
   total: number;
+}
+
+export interface UserListResponse {
+  items: User[];
+  total: number;
+}
+
+export interface UpdateUserRequest {
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface SetUserRolesRequest {
+  roleIds: number[];
+}
+
+export interface Permission {
+  name: string;
+  description: string;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  permissions: Permission[];
+}
+
+export interface RoleListResponse {
+  items: Role[];
+  total: number;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  permissions: Permission[];
+}
+
+export interface UpdateRoleRequest {
+  name?: string;
+  permissions?: Permission[];
 }
 
 export interface Setting {

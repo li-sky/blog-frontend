@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send } from 'lucide-react';
+import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
 import { unified } from 'unified';
@@ -125,20 +125,13 @@ export const PostDetail: React.FC = () => {
 
   return (
     <article className="max-w-3xl mx-auto">
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/')} 
-        className="mb-6 -ml-4 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-        icon={<ArrowLeft className="w-4 h-4" />}
-      >
-        回到文章列表
-      </Button>
-
       <header className="mb-10">
         <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
           <span className="flex items-center">
-            <Calendar className="w-4 h-4 mr-1.5" />
+            <Calendar className="w-4 h-4 mr-2" />
             {new Date(post.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+            <PenBoxIcon className="w-4 h-4 ml-4 mr-2" />
+            {new Date(post.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
           </span>
           {post.status === 'draft' && (
             <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded text-xs font-medium">Draft</span>
@@ -148,6 +141,17 @@ export const PostDetail: React.FC = () => {
         <h1 className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 leading-tight serif">
           {post.title}
         </h1>
+        {post.user && (
+            <div className="flex items-center">
+              <img 
+                src={`https://www.gravatar.com/avatar/${post.user.emailSha256}?d=identicon`} 
+                alt={post.user.username} 
+                className="h-6 w-6 rounded-full mr-2"
+              />
+              <div className="mr-2" />
+              <span className="font-medium text-gray-900 dark:text-white">{post.user.username}</span>
+            </div>
+        )}
       </header>
 
       {/* 

@@ -1,4 +1,4 @@
-import { AuthResponse, Comment, CommentListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
+import { AuthResponse, Comment, CommentListResponse, Image, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -98,6 +98,37 @@ const normalizeCommentList = (data: any): CommentListResponse => ({
   items: (data?.items || []).map(normalizeComment),
 });
 
+const normalizeUser = (user: any): User => {
+  if (!user) return {} as User;
+  const { id, ID, createdAt, created_at, ...rest } = user;
+  return {
+    ...rest,
+    id: normalizeId(id ?? ID),
+    createdAt: normalizeDate(createdAt ?? created_at),
+  } as User;
+};
+
+const normalizeUserList = (data: any): UserListResponse => ({
+  ...data,
+  items: (data?.items || []).map(normalizeUser),
+});
+
+const normalizeRole = (role: any): Role => {
+  if (!role) return {} as Role;
+  const { id, ID, permissions, Permissions, ...rest } = role;
+  const perms = permissions || Permissions;
+  return {
+    ...rest,
+    id: normalizeId(id ?? ID),
+    permissions: Array.isArray(perms) ? perms : [],
+  } as Role;
+};
+
+const normalizeRoleList = (data: any): RoleListResponse => ({
+  ...data,
+  items: (data?.items || []).map(normalizeRole),
+});
+
 export const api = {
   auth: {
     login: async (credentials: LoginRequest): Promise<AuthResponse> => {
@@ -106,7 +137,8 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
-      return handleResponse(res);
+      const data = await handleResponse(res);
+      return { ...data, user: normalizeUser(data.user) };
     },
     register: async (payload: RegisterRequest): Promise<AuthResponse> => {
       const res = await fetch(`${BASE_URL}/auth/register`, {
@@ -114,7 +146,8 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      return handleResponse(res);
+      const data = await handleResponse(res);
+      return { ...data, user: normalizeUser(data.user) };
     },
     initAdmin: async (payload: InitAdminRequest): Promise<AuthResponse> => {
       const res = await fetch(`${BASE_URL}/auth/admin/init`, {
@@ -122,13 +155,15 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      return handleResponse(res);
+      const data = await handleResponse(res);
+      return { ...data, user: normalizeUser(data.user) };
     },
     me: async (): Promise<User> => {
       const res = await fetch(`${BASE_URL}/auth/me`, {
         headers: getHeaders(),
       });
-      return handleResponse(res);
+      const data = await handleResponse(res);
+      return normalizeUser(data);
     },
     logout: () => {
       localStorage.removeItem('token');
@@ -161,6 +196,105 @@ export const api = {
       });
       return handleResponse(res);
     },
+  },
+  users: {
+    list: async (params: { limit?: number; offset?: number } = {}): Promise<UserListResponse> => {
+      const query = new URLSearchParams({ 
+        limit: (params.limit || 20).toString(), 
+        offset: (params.offset || 0).toString() 
+      });
+      const res = await fetch(`${BASE_URL}/users?${query}`, {
+        headers: getHeaders(),
+      });
+      const data = await handleResponse(res);
+      return normalizeUserList(data);
+    },
+    get: async (id: number): Promise<User> => {
+      const res = await fetch(`${BASE_URL}/users/${id}`, {
+        headers: getHeaders(),
+      });
+      const data = await handleResponse(res);
+      return normalizeUser(data);
+    },
+    update: async (id: number, data: UpdateUserRequest): Promise<User> => {
+      const res = await fetch(`${BASE_URL}/users/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const responseData = await handleResponse(res);
+      return normalizeUser(responseData);
+    },
+    delete: async (id: number): Promise<void> => {
+      const res = await fetch(`${BASE_URL}/users/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+    setRoles: async (id: number, roleIds: number[]): Promise<User> => {
+      const res = await fetch(`${BASE_URL}/users/${id}/roles`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ roleIds }),
+      });
+      const data = await handleResponse(res);
+      return normalizeUser(data);
+    },
+    createAdmin: async (data: RegisterRequest): Promise<User> => {
+      const res = await fetch(`${BASE_URL}/users/admin`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const responseData = await handleResponse(res);
+      return normalizeUser(responseData);
+    }
+  },
+  roles: {
+    list: async (params: { limit?: number; offset?: number } = {}): Promise<RoleListResponse> => {
+      const query = new URLSearchParams({ 
+        limit: (params.limit || 20).toString(), 
+        offset: (params.offset || 0).toString() 
+      });
+      const res = await fetch(`${BASE_URL}/roles?${query}`, {
+        headers: getHeaders(),
+      });
+      const data = await handleResponse(res);
+      return normalizeRoleList(data);
+    },
+    get: async (id: number): Promise<Role> => {
+      const res = await fetch(`${BASE_URL}/roles/${id}`, {
+        headers: getHeaders(),
+      });
+      const data = await handleResponse(res);
+      return normalizeRole(data);
+    },
+    create: async (data: CreateRoleRequest): Promise<Role> => {
+      const res = await fetch(`${BASE_URL}/roles`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const responseData = await handleResponse(res);
+      return normalizeRole(responseData);
+    },
+    update: async (id: number, data: UpdateRoleRequest): Promise<Role> => {
+      const res = await fetch(`${BASE_URL}/roles/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const responseData = await handleResponse(res);
+      return normalizeRole(responseData);
+    },
+    delete: async (id: number): Promise<void> => {
+      const res = await fetch(`${BASE_URL}/roles/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    }
   },
   posts: {
     getAll: async (params: { limit?: number; offset?: number } = {}): Promise<PostListResponse> => {
@@ -220,6 +354,29 @@ export const api = {
       const res = await fetch(`${BASE_URL}/posts/${id}`, {
         method: 'DELETE',
         headers: getHeaders(),
+      });
+      return handleResponse(res);
+    }
+  },
+  images: {
+    upload: async (file: File, alt?: string): Promise<Image> => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (alt) {
+        formData.append('alt', alt);
+      }
+
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      // Note: Content-Type is automatically set by browser for FormData
+
+      const res = await fetch(`${BASE_URL}/images/upload`, {
+        method: 'POST',
+        headers,
+        body: formData,
       });
       return handleResponse(res);
     }

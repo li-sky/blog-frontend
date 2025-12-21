@@ -1,13 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { PenTool, User, Sparkles, Sun, Moon, Monitor, Settings, Users } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { PenTool, User, Sparkles, Sun, Moon, Monitor, Settings, Users, LogOut } from 'lucide-react';
+import { User as UserType } from '../types';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
   
   // Simple check for UI update, actual protection is in Admin page
   const isLoggedIn = !!localStorage.getItem('token');
+
+  const user = useMemo(() => {
+    const str = localStorage.getItem('user');
+    try {
+      return str ? JSON.parse(str) as UserType : null;
+    } catch {
+      return null;
+    }
+  }, [location.pathname, isLoggedIn]);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+    window.location.reload();
+  };
 
   // Theme logic
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
@@ -81,30 +115,47 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
 
             <nav className="flex items-center space-x-3">
-              <Link 
-                to="/" 
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/') 
-                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
-                }`}
-              >
-                家
-              </Link>
-              {isLoggedIn ? (
-                <>
-                <Link 
-                  to="/admin" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
-                    isActive('/admin') 
-                      ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <PenTool className="w-4 h-4 mr-1.5" />
-                  汽车仪表
-                </Link>
-                </>
+              {isLoggedIn && user ? (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <img
+                      src={`https://www.gravatar.com/avatar/${user.emailSha256}?d=identicon`}
+                      alt={user.username}
+                      className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
+                    />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.username}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                      </div>
+                      
+                      {user.roles.includes('admin') && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <PenTool className="w-4 h-4 mr-2" />
+                          Dashboard
+                        </Link>
+                      )}
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <Link 

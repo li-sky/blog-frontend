@@ -304,12 +304,16 @@ export const api = {
         sort: 'created_at',
         order: 'desc'
       });
-      const res = await fetch(`${BASE_URL}/posts?${query}`);
+      const res = await fetch(`${BASE_URL}/posts?${query}`, {
+        headers: getHeaders(),
+      });
       const data = await handleResponse(res);
       return normalizePostList(data);
     },
     getOne: async (id: string | number): Promise<Post> => {
-      const res = await fetch(`${BASE_URL}/posts/${id}`);
+      const res = await fetch(`${BASE_URL}/posts/${id}`, {
+        headers: getHeaders(),
+      });
       const data = await handleResponse(res);
       return normalizePost(data);
     },

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PenTool, User, Sparkles, Sun, Moon, Monitor, Settings, Users, LogOut } from 'lucide-react';
 import { User as UserType } from '../types';
+import { api } from '../services/api';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -11,13 +12,51 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   // Simple check for UI update, actual protection is in Admin page
   const isLoggedIn = !!localStorage.getItem('token');
 
-  const user = useMemo(() => {
+  const [user, setUser] = useState<UserType | null>(() => {
     const str = localStorage.getItem('user');
     try {
       return str ? JSON.parse(str) as UserType : null;
     } catch {
       return null;
     }
+  });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!isLoggedIn) {
+        setUser(null);
+        return;
+      }
+
+      // Try to sync with localStorage first (e.g. after login)
+      const localStr = localStorage.getItem('user');
+      if (localStr) {
+        try {
+          const localUser = JSON.parse(localStr);
+          setUser(localUser);
+        } catch {}
+      }
+
+      try {
+        const userData = await api.auth.me();
+        
+        // Calculate SHA256 for Gravatar if missing
+        if (userData.email && !userData.emailSha256) {
+          const msgBuffer = new TextEncoder().encode(userData.email.trim().toLowerCase());
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          userData.emailSha256 = hashHex;
+        }
+
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      }
+    };
+
+    fetchUser();
   }, [location.pathname, isLoggedIn]);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -122,8 +161,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     className="flex items-center space-x-2 focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <img
-                      src={`https://www.gravatar.com/avatar/${user.emailSha256}?d=identicon`}
-                      alt={user.username}
+                      src={`https://www.gravatar.com/avatar/${user.emailSha256 || ''}?d=identicon`}
+                      alt={user.username || 'User'}
                       className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
                     />
                   </button>
@@ -131,11 +170,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100">
                       <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.username}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.username || user.email || 'User'}</p>
+                        {user.email && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>}
                       </div>
                       
-                      {user.roles.includes('admin') && (
+                      {user.roles?.includes('admin') && (
                         <Link
                           to="/admin"
                           className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"

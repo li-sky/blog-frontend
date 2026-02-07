@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
 import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon, X } from 'lucide-react';
@@ -13,6 +13,66 @@ import rehypeKatex from 'rehype-katex';
 import rehypeReact from 'rehype-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import 'katex/dist/katex.min.css';
+
+interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  onZoom?: (src: string) => void;
+  onZoomSrc?: string;
+}
+
+const LazyImage: React.FC<LazyImageProps> = ({
+  onZoom,
+  onZoomSrc,
+  src,
+  className,
+  ...props
+}) => {
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const placeholderSrc =
+    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+  useEffect(() => {
+    if (!imgRef.current) return;
+    if (!('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: '300px 0px' }
+    );
+
+    observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleZoom = () => {
+    if (!onZoom) return;
+    const target = onZoomSrc || (typeof src === 'string' ? src.split('?')[0] : '');
+    if (target) onZoom(target);
+  };
+
+  return (
+    <img
+      {...props}
+      ref={imgRef}
+      src={isVisible ? src : placeholderSrc}
+      data-src={src}
+      loading="lazy"
+      decoding="async"
+      className={className}
+      onClick={handleZoom}
+    />
+  );
+};
 
 export const PostDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,15 +111,12 @@ export const PostDetail: React.FC = () => {
       }
 
       return (
-        <img
+        <LazyImage
           {...props}
           src={src}
+          onZoom={setZoomedImage}
+          onZoomSrc={props.src ? props.src.split('?')[0] : ''}
           className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02]"
-          onClick={() => {
-            // Remove query parameters to get the original image
-            const originalSrc = props.src.split('?')[0];
-            setZoomedImage(originalSrc);
-          }}
         />
       );
     };

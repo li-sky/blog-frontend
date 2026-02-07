@@ -31,8 +31,19 @@ export const PostDetail: React.FC = () => {
 
     const CustomImage = (props: any) => {
       let src = props.src;
-      // Only append params if it's a local image path starting with /images/
-      if (src && src.startsWith('/images/')) {
+      
+      // Check if image is local (same origin) and path starts with /images/
+      let isLocal = false;
+      try {
+        const urlObj = new URL(src, window.location.origin);
+        if (urlObj.origin === window.location.origin && urlObj.pathname.startsWith('/images/')) {
+          isLocal = true;
+        }
+      } catch (e) {
+        // Invalid URL, ignore
+      }
+
+      if (isLocal) {
         // Check if it already has params to avoid duplication if re-rendered
         if (!src.includes('?')) {
            src = `${src}?w=1200&format=webp`;

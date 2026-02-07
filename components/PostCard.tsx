@@ -27,6 +27,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
     };
   }, [post.summary, post.content]);
 
+  const getOptimizedImageUrl = (url: string) => {
+    if (!url) return url;
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      console.log('Image URL Origin:', urlObj.origin);
+      console.log('Window Location Origin:', window.location.origin);
+      console.log('Image URL Pathname:', urlObj.pathname);
+      if (urlObj.origin === window.location.origin && urlObj.pathname.startsWith('/images/') && !url.includes('?')) {
+        return `${url}?w=600&format=webp`;
+      }
+    } catch (e) {
+      // Ignore invalid URLs
+    }
+    return url;
+  };
+
   return (
     <div 
       onClick={() => onClick(post.id)}
@@ -36,7 +52,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         <div className="w-full overflow-hidden">
            <img 
              className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500" 
-             src={imageUrl.startsWith('/images/') && !imageUrl.includes('?') ? `${imageUrl}?w=600&format=webp` : imageUrl} 
+             src={getOptimizedImageUrl(imageUrl)} 
              alt={post.title} 
              onError={(e) => {
                (e.target as HTMLImageElement).style.display = 'none';

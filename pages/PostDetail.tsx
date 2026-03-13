@@ -111,13 +111,20 @@ export const PostDetail: React.FC = () => {
       }
 
       return (
-        <LazyImage
-          {...props}
-          src={src}
-          onZoom={setZoomedImage}
-          onZoomSrc={props.src ? props.src.split('?')[0] : ''}
-          className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02]"
-        />
+        <span className="block my-6">
+          <LazyImage
+            {...props}
+            src={src}
+            onZoom={setZoomedImage}
+            onZoomSrc={props.src ? props.src.split('?')[0] : ''}
+            className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02] mx-auto"
+          />
+          {props.alt && (
+            <span className="block text-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {props.alt}
+            </span>
+          )}
+        </span>
       );
     };
 

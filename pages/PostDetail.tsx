@@ -28,6 +28,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
 }) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const placeholderSrc =
     'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -68,8 +69,9 @@ const LazyImage: React.FC<LazyImageProps> = ({
       data-src={src}
       loading="lazy"
       decoding="async"
-      className={className}
+      className={`${className || ''} ${!isLoaded ? 'min-h-[150px] object-cover bg-gray-100 dark:bg-gray-800' : ''}`}
       onClick={handleZoom}
+      onLoad={() => setIsLoaded(true)}
     />
   );
 };
@@ -119,9 +121,9 @@ export const PostDetail: React.FC = () => {
             onZoomSrc={props.src ? props.src.split('?')[0] : ''}
             className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02] mx-auto"
           />
-          {props.alt && (
+          {props.title && (
             <span className="block text-center mt-2 text-sm text-gray-500 dark:text-gray-400">
-              {props.alt}
+              {props.title}
             </span>
           )}
         </span>

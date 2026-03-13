@@ -238,7 +238,7 @@ export const PostDetail: React.FC = () => {
           )}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 leading-tight serif">
+        <h1 className="md:leading-normal leading-normal text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 serif">
           {post.title}
         </h1>
         {post.user && (

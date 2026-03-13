@@ -22,6 +22,60 @@ export const Admin: React.FC = () => {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [editorSeed, setEditorSeed] = useState(0);
 
+  // Auto-save states
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
+  // Auto-save and caching
+  useEffect(() => {
+    if (view !== 'editor') return;
+
+    const cacheKey = editingId ? `admin_post_cache_${editingId}` : `admin_post_cache_new`;
+    const cacheData = {
+      title,
+      summary,
+      content,
+      timestamp: Date.now()
+    };
+    // Always store changes to local cache
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+
+    // Only auto-save to server if dirty and not totally empty
+    if (!isDirty || (!title && !content && !summary)) return;
+
+    const timer = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        const postData: PostPayload = {
+          title: title || '无标题草稿',
+          body: content,
+          summary: summary || content.substring(0, 100),
+          status: 'draft' as const
+        };
+
+        if (editingId) {
+          await api.posts.update(editingId, postData);
+          setSaveStatus('saved');
+        } else {
+          const newPost = await api.posts.create(postData);
+          setEditingId(newPost.id);
+          localStorage.removeItem('admin_post_cache_new');
+          setSaveStatus('saved');
+        }
+        setIsDirty(false);
+      } catch (err) {
+        setSaveStatus('error');
+        setToastMessage('自动保存失败，将于 5 秒后自动重试...');
+        setTimeout(() => setToastMessage(null), 4000);
+        setTimeout(() => setRetryTrigger(prev => prev + 1), 5000); // 5秒后重试
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [title, summary, content, editingId, isDirty, view, retryTrigger]);
+
   // Check auth
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,11 +111,31 @@ export const Admin: React.FC = () => {
   };
 
   const handleCreateNew = () => {
+    const cacheKey = `admin_post_cache_new`;
+    const cachedStr = localStorage.getItem(cacheKey);
+    let useCache = false;
+    
+    if (cachedStr) {
+       const cachedData = JSON.parse(cachedStr);
+       useCache = window.confirm(`发现时间为 ${new Date(cachedData.timestamp).toLocaleString()} 的未保存草稿。\n您要恢复这些未保存的更改吗？`);
+    }
+
     setEditingId(null);
-    setTitle('');
-    setSummary('');
-    setContent('');
-    setIsSummaryOpen(true);
+    if (useCache) {
+      const cachedData = JSON.parse(cachedStr!);
+      setTitle(cachedData.title || '');
+      setSummary(cachedData.summary || '');
+      setContent(cachedData.content || '');
+      setIsSummaryOpen(!!cachedData.summary);
+      setIsDirty(true);
+    } else {
+      setTitle('');
+      setSummary('');
+      setContent('');
+      setIsSummaryOpen(true);
+      setIsDirty(false);
+    }
+    setSaveStatus('idle');
     setEditorSeed((prev) => prev + 1);
     setView('editor');
   };
@@ -70,11 +144,35 @@ export const Admin: React.FC = () => {
     try {
       setIsLoading(true);
       const fullPost = await api.posts.getOne(post.id);
+      
+      const cacheKey = `admin_post_cache_${post.id}`;
+      const cachedStr = localStorage.getItem(cacheKey);
+      
+      let useCache = false;
+      if (cachedStr) {
+        const cachedData = JSON.parse(cachedStr);
+        const serverTime = new Date(fullPost.updatedAt || fullPost.createdAt).getTime();
+        if (cachedData.timestamp > serverTime) {
+          useCache = window.confirm(`发现更新的本地草稿 (时间: ${new Date(cachedData.timestamp).toLocaleString()})，晚于服务器上的保存时间。\n您要恢复本地的更改吗？`);
+        }
+      }
+
       setEditingId(fullPost.id);
-      setTitle(fullPost.title);
-      setSummary(fullPost.summary);
-      setContent(fullPost.content);
-      setIsSummaryOpen(!!fullPost.summary);
+      if (useCache) {
+        const cachedData = JSON.parse(cachedStr!);
+        setTitle(cachedData.title || '');
+        setSummary(cachedData.summary || '');
+        setContent(cachedData.content || '');
+        setIsSummaryOpen(!!cachedData.summary);
+        setIsDirty(true);
+      } else {
+        setTitle(fullPost.title);
+        setSummary(fullPost.summary || '');
+        setContent(fullPost.content);
+        setIsSummaryOpen(!!fullPost.summary);
+        setIsDirty(false);
+      }
+      setSaveStatus('idle');
       setEditorSeed((prev) => prev + 1);
       setView('editor');
     } catch (e) {
@@ -109,26 +207,7 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    const postData: PostPayload = {
-      title,
-      body: content,
-      summary: summary || content.substring(0, 100),
-      status: 'draft' as const
-    };
-
-    try {
-      if (editingId) {
-        await api.posts.update(editingId, postData);
-      } else {
-        await api.posts.create(postData);
-      }
-      setView('list');
-      fetchPosts();
-    } catch (e) {
-      alert('Failed to save');
-    }
-  };
+  /* handleSave removed as it's auto-saving now */
 
   const handleLogout = () => {
     api.auth.logout();
@@ -219,12 +298,20 @@ export const Admin: React.FC = () => {
       {/* Top Bar */}
       <div className="flex items-center h-16 px-6 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 transition-colors duration-300">
         <button 
-          onClick={() => setView('list')} 
+          onClick={() => {
+             setView('list');
+             fetchPosts();
+          }} 
           className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Dashboard
+          返回仪表盘
         </button>
+        <div className="ml-auto text-sm text-gray-500 flex items-center">
+          {saveStatus === 'saving' && <span>正在保存...</span>}
+          {saveStatus === 'saved' && <span className="text-green-500">已自动保存草稿</span>}
+          {saveStatus === 'error' && <span className="text-red-500">保存失败</span>}
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -237,7 +324,7 @@ export const Admin: React.FC = () => {
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { setTitle(e.target.value); setIsDirty(true); }}
                   placeholder="Post Title"
                   className="w-full text-4xl font-bold text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 border-none focus:ring-0 p-0 outline-none bg-transparent"
                 />
@@ -257,7 +344,7 @@ export const Admin: React.FC = () => {
                 {isSummaryOpen && (
                   <textarea
                     value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
+                    onChange={(e) => { setSummary(e.target.value); setIsDirty(true); }}
                     rows={3}
                     placeholder="Write a summary..."
                     className="w-full text-lg text-gray-600 dark:text-gray-300 placeholder-gray-300 dark:placeholder-gray-600 border-none focus:ring-0 p-0 resize-none outline-none bg-transparent"
@@ -272,21 +359,29 @@ export const Admin: React.FC = () => {
               <CrepeEditor
                 key={editorSeed}
                 value={content}
-                onChange={setContent}
+                onChange={(v) => { setContent(v); setIsDirty(true); }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      <button
-        onClick={handleSave}
-        className="fixed bottom-28 right-10 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 z-50"
-        title={editingId ? 'Update Post' : 'Save Draft'}
-      >
-        <Save className="w-6 h-6" />
-      </button>
+      {/* Floating Action Button - removed in favor of auto-save */}
+
+      {/* Warning Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 bg-red-600 text-white px-6 py-3 rounded-md shadow-lg flex items-center gap-3 z-50"
+          >
+            <span>{toastMessage}</span>
+            <button onClick={() => setToastMessage(null)} className="opacity-70 hover:opacity-100">&times;</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

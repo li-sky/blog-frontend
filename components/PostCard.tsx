@@ -46,7 +46,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   return (
     <div 
       onClick={() => onClick(post.id)}
-      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer break-inside-avoid mb-6 overflow-hidden"
+      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer break-inside-avoid overflow-hidden"
     >
       {imageUrl && (
         <div className="w-full overflow-hidden">

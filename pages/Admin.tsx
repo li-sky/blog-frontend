@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, PostPayload, User } from '../types';
 import { Button } from '../components/ui/Button';
-import { Save, Trash2, Globe, FileText, Plus, ArrowLeft, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { Save, Trash2, Globe, FileText, Plus, ArrowLeft, ChevronDown, ChevronRight, Settings, Images } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { CrepeEditor } from '../components/CrepeEditor';
@@ -223,12 +223,20 @@ export const Admin: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <div className="flex gap-4">
             {currentUser.roles.includes('admin') && (
-              <Link to="/settings">
-                <Button variant="outline" className="flex items-center">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-              </Link>
+              <>
+                <Link to="/settings/images">
+                  <Button variant="outline" className="flex items-center">
+                    <Images className="w-4 h-4 mr-2" />
+                    Upgrade Images
+                  </Button>
+                </Link>
+                <Link to="/settings">
+                  <Button variant="outline" className="flex items-center">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                </Link>
+              </>
             )}
             <Button variant="outline" onClick={handleLogout}>Logout</Button>
             <Button onClick={handleCreateNew} icon={<Plus className="w-4 h-4"/>}>New Post</Button>

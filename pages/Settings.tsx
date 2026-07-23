@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Setting, User } from '../types';
 import { Button } from '../components/ui/Button';
-import { Save, X, Settings as SettingsIcon, Users as UsersIcon, Shield as ShieldIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Images, Save, X, Settings as SettingsIcon, Users as UsersIcon, Shield as ShieldIcon } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { motion } from 'framer-motion';
 import { Users } from './Users';
@@ -91,6 +91,12 @@ export const Settings: React.FC = () => {
           <SettingsIcon className="mr-3 h-8 w-8" />
           System Settings
         </h1>
+        <Link to="/settings/images">
+          <Button variant="outline">
+            <Images className="mr-2 h-4 w-4" />
+            Upgrade Images
+          </Button>
+        </Link>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden min-h-[600px]">

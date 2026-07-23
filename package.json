@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@jsquash/webp": "^1.5.0",
     "@milkdown/crepe": "^7.19.0",
     "@milkdown/plugin-upload": "^7.19.0",
     "framer-motion": "^12.36.0",

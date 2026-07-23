@@ -1,4 +1,4 @@
-import { AuthResponse, Comment, CommentListResponse, Image, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
+import { AuthResponse, Comment, CommentListResponse, EncodedImageVariant, Image, ImageListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -363,12 +363,23 @@ export const api = {
     }
   },
   images: {
-    upload: async (file: File, alt?: string): Promise<Image> => {
+    upload: async (
+      file: File,
+      alt?: string,
+      variants: EncodedImageVariant[] = [],
+    ): Promise<Image> => {
       const formData = new FormData();
       formData.append('file', file);
       if (alt) {
         formData.append('alt', alt);
       }
+      variants.forEach((variant) => {
+        formData.append(
+          `webp${variant.targetWidth}`,
+          variant.blob,
+          `${file.name.replace(/\.[^.]+$/, '')}_w${variant.targetWidth}.webp`,
+        );
+      });
 
       const token = localStorage.getItem('token');
       const headers: HeadersInit = {};
@@ -383,7 +394,43 @@ export const api = {
         body: formData,
       });
       return handleResponse(res);
-    }
+    },
+    list: async (
+      params: { limit?: number; offset?: number } = {},
+    ): Promise<ImageListResponse> => {
+      const query = new URLSearchParams({
+        limit: (params.limit || 100).toString(),
+        offset: (params.offset || 0).toString(),
+      });
+      const res = await fetch(`${BASE_URL}/images?${query}`, {
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+    uploadVariants: async (
+      imageId: number,
+      variants: EncodedImageVariant[],
+    ): Promise<Image> => {
+      const formData = new FormData();
+      variants.forEach((variant) => {
+        formData.append(
+          `webp${variant.targetWidth}`,
+          variant.blob,
+          `image-${imageId}_w${variant.targetWidth}.webp`,
+        );
+      });
+
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+      const res = await fetch(`${BASE_URL}/images/${imageId}/variants`, {
+        method: 'PUT',
+        headers,
+        body: formData,
+      });
+      return handleResponse(res);
+    },
   },
   settings: {
     getAll: async (): Promise<SettingsResponse> => {

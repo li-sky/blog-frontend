@@ -13,6 +13,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeReact from 'rehype-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import 'katex/dist/katex.min.css';
+import { getResponsiveImageProps } from '../services/imageVariants';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   onZoom?: (src: string) => void;
@@ -92,33 +93,27 @@ export const PostDetail: React.FC = () => {
     if (!post?.content) return;
 
     const CustomImage = (props: any) => {
-      let src = props.src;
-      
-      // Check if image is local (same origin) and path starts with /images/
-      let isLocal = false;
-      try {
-        const urlObj = new URL(src, window.location.origin);
-        if (urlObj.origin === window.location.origin && urlObj.pathname.startsWith('/images/')) {
-          isLocal = true;
-        }
-      } catch (e) {
-        // Invalid URL, ignore
-      }
-
-      if (isLocal) {
-        // Check if it already has params to avoid duplication if re-rendered
-        if (!src.includes('?')) {
-           src = `${src}?w=1200&format=webp`;
-        }
-      }
+      const originalSrc = typeof props.src === 'string' ? props.src : '';
+      const responsive = getResponsiveImageProps(originalSrc);
 
       return (
         <span className="block my-6">
           <LazyImage
             {...props}
-            src={src}
+            src={responsive.src}
+            srcSet={responsive.srcSet}
+            sizes="(max-width: 768px) 100vw, 1200px"
             onZoom={setZoomedImage}
-            onZoomSrc={props.src ? props.src.split('?')[0] : ''}
+            onZoomSrc={originalSrc.split('?')[0]}
+            onError={(event) => {
+              if (event.currentTarget.dataset.originalFallback === 'true') {
+                event.currentTarget.style.display = 'none';
+                return;
+              }
+              event.currentTarget.dataset.originalFallback = 'true';
+              event.currentTarget.srcset = '';
+              event.currentTarget.src = originalSrc;
+            }}
             className="cursor-zoom-in rounded-lg transition-transform hover:scale-[1.02] mx-auto"
           />
           {props.title && (

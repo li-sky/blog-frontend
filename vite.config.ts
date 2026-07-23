@@ -5,6 +5,15 @@ import { visualizer } from "rollup-plugin-visualizer";
 import viteCompression from "vite-plugin-compression";
 
 export default defineConfig({
+  optimizeDeps: {
+    // jSquash loads its WebAssembly binary at runtime inside a module worker.
+    exclude: ["@jsquash/webp"],
+  },
+
+  worker: {
+    format: "es",
+  },
+
   server: {
     port: 3000,
     host: "0.0.0.0",

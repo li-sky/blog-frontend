@@ -8,6 +8,7 @@ import { PostDetail } from '../pages/PostDetail';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { Users } from '../pages/Users';
+import { ImageUpgrade } from '../pages/ImageUpgrade';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -32,6 +33,7 @@ export const AnimatedRoutes: React.FC = () => {
         <Route path="/post/:id" element={<PageTransition><PostDetail /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
         <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
+        <Route path="/settings/images" element={<PageTransition><ImageUpgrade /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
       </Routes>

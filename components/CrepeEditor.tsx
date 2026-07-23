@@ -4,6 +4,7 @@ import { editorViewCtx } from '@milkdown/core';
 import { TextSelection } from '@milkdown/prose/state';
 import { insert } from '@milkdown/utils';
 import { api } from '../services/api';
+import { encodeImageVariants } from '../services/imageVariants';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './crepe-theme.css';
@@ -22,6 +23,11 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
 
   const escapeMarkdownAlt = (text: string) => text.replace(/[\[\]()]/g, '\\$&');
 
+  const uploadImage = async (file: File, alt?: string) => {
+    const variants = await encodeImageVariants(file);
+    return api.images.upload(file, alt, variants);
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -31,7 +37,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
       featureConfigs: {
         [Crepe.Feature.ImageBlock]: {
           onUpload: async (file: File) => {
-            const image = await api.images.upload(file);
+            const image = await uploadImage(file);
             return image.url;
           },
         },
@@ -89,16 +95,22 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
       let completed = 0;
 
       const markdownChunks: string[] = [];
-      for (const file of imageFiles) {
-        const image = await api.images.upload(file, file.name);
-        completed += 1;
-        setUploadProgress(Math.round((completed / imageFiles.length) * 100));
-        const alt = escapeMarkdownAlt(file.name);
-        markdownChunks.push(`![${alt}](${image.url})`);
-      }
+      try {
+        for (const file of imageFiles) {
+          const image = await uploadImage(file, file.name);
+          completed += 1;
+          setUploadProgress(Math.round((completed / imageFiles.length) * 100));
+          const alt = escapeMarkdownAlt(file.name);
+          markdownChunks.push(`![${alt}](${image.url})`);
+        }
 
-      editor.action(insert(markdownChunks.join('\n\n')));
-      setIsUploading(false);
+        editor.action(insert(markdownChunks.join('\n\n')));
+      } catch (error) {
+        console.error('Image encoding or upload failed', error);
+        window.alert(error instanceof Error ? error.message : 'Image upload failed.');
+      } finally {
+        setIsUploading(false);
+      }
     };
 
     const container = containerRef.current;

@@ -24,7 +24,20 @@ export interface Image {
   url: string;
   userId: number;
   storageBackend: string;
+  webp600Url?: string;
+  webp1200Url?: string;
+  variantsComplete: boolean;
   createdAt: string;
+}
+
+export interface EncodedImageVariant {
+  targetWidth: 600 | 1200;
+  blob: Blob;
+}
+
+export interface ImageListResponse {
+  items: Image[];
+  total: number;
 }
 
 export type PostStatus = 'draft' | 'published';

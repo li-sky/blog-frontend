@@ -129,6 +129,21 @@ const normalizeRoleList = (data: any): RoleListResponse => ({
   items: (data?.items || []).map(normalizeRole),
 });
 
+const normalizeImage = (image: any): Image => {
+  if (!image) return {} as Image;
+  const { id, ID, createdAt, CreatedAt, created_at, ...rest } = image;
+  return {
+    ...rest,
+    id: normalizeId(id ?? ID),
+    createdAt: normalizeDate(createdAt ?? CreatedAt ?? created_at),
+  } as Image;
+};
+
+const normalizeImageList = (data: any): ImageListResponse => ({
+  ...data,
+  items: (data?.items || []).map(normalizeImage),
+});
+
 export const api = {
   auth: {
     login: async (credentials: LoginRequest): Promise<AuthResponse> => {
@@ -374,10 +389,13 @@ export const api = {
         formData.append('alt', alt);
       }
       variants.forEach((variant) => {
+        const suffix = variant.targetWidth === 'full'
+          ? 'full'
+          : `w${variant.targetWidth}`;
         formData.append(
-          `webp${variant.targetWidth}`,
+          variant.targetWidth === 'full' ? 'webpFull' : `webp${variant.targetWidth}`,
           variant.blob,
-          `${file.name.replace(/\.[^.]+$/, '')}_w${variant.targetWidth}.webp`,
+          `${file.name.replace(/\.[^.]+$/, '')}_${suffix}.webp`,
         );
       });
 
@@ -393,7 +411,7 @@ export const api = {
         headers,
         body: formData,
       });
-      return handleResponse(res);
+      return normalizeImage(await handleResponse(res));
     },
     list: async (
       params: { limit?: number; offset?: number } = {},
@@ -405,7 +423,7 @@ export const api = {
       const res = await fetch(`${BASE_URL}/images?${query}`, {
         headers: getHeaders(),
       });
-      return handleResponse(res);
+      return normalizeImageList(await handleResponse(res));
     },
     uploadVariants: async (
       imageId: number,
@@ -413,10 +431,13 @@ export const api = {
     ): Promise<Image> => {
       const formData = new FormData();
       variants.forEach((variant) => {
+        const suffix = variant.targetWidth === 'full'
+          ? 'full'
+          : `w${variant.targetWidth}`;
         formData.append(
-          `webp${variant.targetWidth}`,
+          variant.targetWidth === 'full' ? 'webpFull' : `webp${variant.targetWidth}`,
           variant.blob,
-          `image-${imageId}_w${variant.targetWidth}.webp`,
+          `image-${imageId}_${suffix}.webp`,
         );
       });
 
@@ -429,7 +450,7 @@ export const api = {
         headers,
         body: formData,
       });
-      return handleResponse(res);
+      return normalizeImage(await handleResponse(res));
     },
   },
   settings: {

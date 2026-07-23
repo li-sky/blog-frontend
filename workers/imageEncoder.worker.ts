@@ -9,7 +9,7 @@ interface EncodeRequest {
 }
 
 interface EncodedVariant {
-  targetWidth: 600 | 1200;
+  targetWidth: 600 | 1200 | 'full';
   buffer: ArrayBuffer;
 }
 
@@ -27,10 +27,12 @@ workerScope.onmessage = async (event: MessageEvent<EncodeRequest>) => {
     });
 
     const variants: EncodedVariant[] = [];
-    for (const targetWidth of [600, 1200] as const) {
-      // Small originals are never enlarged. We still create both canonical
-      // filenames so rendering can use deterministic URLs without an API lookup.
-      const width = Math.min(targetWidth, bitmap.width);
+    for (const targetWidth of [600, 1200, 'full'] as const) {
+      // Small originals are never enlarged. We still create every canonical
+      // filename so rendering can use deterministic URLs without an API lookup.
+      const width = targetWidth === 'full'
+        ? bitmap.width
+        : Math.min(targetWidth, bitmap.width);
       const height = Math.max(1, Math.round((bitmap.height * width) / bitmap.width));
       const canvas = new OffscreenCanvas(width, height);
       const context = canvas.getContext('2d', { alpha: true });

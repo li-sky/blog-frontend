@@ -24,6 +24,26 @@ const statusLabel: Record<ConversionStatus, string> = {
   error: '转换失败',
 };
 
+const CONVERSION_CONCURRENCY = 4;
+
+const getOriginalImageUrl = (image: Image): string => {
+  const storedUrl = typeof image.url === 'string' ? image.url.trim() : '';
+  if (storedUrl && storedUrl !== 'undefined' && !storedUrl.includes('/undefined')) {
+    return storedUrl;
+  }
+
+  const storedPath = typeof image.storagePath === 'string'
+    ? image.storagePath.trim().replaceAll('\\', '/').replace(/^\/+/, '').replace(/^uploads\//, '')
+    : '';
+  const filename = typeof image.filename === 'string' ? image.filename.trim() : '';
+  const relativePath = storedPath || filename;
+  if (!relativePath || relativePath === 'undefined') {
+    throw new Error('原图地址缺失，且无法从存储路径恢复。');
+  }
+
+  return `/images/${relativePath.split('/').map(encodeURIComponent).join('/')}`;
+};
+
 export const ImageUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<ConversionItem[]>([]);
@@ -82,7 +102,7 @@ export const ImageUpgrade: React.FC = () => {
 
     try {
       updateItem(image.id, { status: 'downloading', message: undefined });
-      const response = await fetch(image.url, { mode: 'cors' });
+      const response = await fetch(getOriginalImageUrl(image), { mode: 'cors' });
       if (!response.ok) {
         throw new Error(`下载原图失败（HTTP ${response.status}）`);
       }
@@ -102,7 +122,7 @@ export const ImageUpgrade: React.FC = () => {
       updateItem(image.id, {
         image: updated,
         status: 'done',
-        message: '600px 与 1200px WebP 已写入。',
+        message: '600px、1200px 与原始分辨率 WebP 已写入。',
       });
     } catch (error) {
       updateItem(image.id, {
@@ -120,10 +140,22 @@ export const ImageUpgrade: React.FC = () => {
       onlyFailed ? item.status === 'error' : item.status === 'ready' || item.status === 'error',
     );
 
-    for (const item of queue) {
-      if (stopRequested.current) break;
-      await convertOne(item);
-    }
+    let nextIndex = 0;
+    const worker = async () => {
+      while (!stopRequested.current) {
+        const item = queue[nextIndex];
+        nextIndex += 1;
+        if (!item) return;
+        await convertOne(item);
+      }
+    };
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(CONVERSION_CONCURRENCY, queue.length) },
+        () => worker(),
+      ),
+    );
     setIsRunning(false);
   };
 
@@ -147,8 +179,8 @@ export const ImageUpgrade: React.FC = () => {
             历史图片升级
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
-            页面会逐张下载原图，在本机通过 WebAssembly 编码 600px 和 1200px WebP，
-            再上传到服务器。转换按顺序执行，可以安全重试。
+            页面只读取图片清单；开始升级后最多同时处理 4 张原图，在本机通过
+            WebAssembly 编码 600px、1200px 和原始分辨率 WebP，再上传到服务器。
           </p>
         </div>
         <div className="flex gap-2">
@@ -185,7 +217,7 @@ export const ImageUpgrade: React.FC = () => {
       {isRunning && (
         <div className="mb-4 flex justify-end">
           <Button variant="ghost" onClick={() => { stopRequested.current = true; }}>
-            处理完当前图片后停止
+            处理完当前任务后停止
           </Button>
         </div>
       )}
@@ -202,11 +234,9 @@ export const ImageUpgrade: React.FC = () => {
           <ul className="divide-y divide-gray-100 dark:divide-gray-700">
             {items.map((item) => (
               <li key={item.image.id} className="flex items-center gap-4 p-4">
-                <img
-                  src={item.image.url}
-                  alt={item.image.alt || item.image.originalName}
-                  className="h-14 w-14 rounded-lg bg-gray-100 object-cover dark:bg-gray-900"
-                />
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-gray-900 dark:text-gray-500">
+                  <ImageIcon className="h-6 w-6" aria-hidden="true" />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-gray-900 dark:text-white">
                     {item.image.originalName}

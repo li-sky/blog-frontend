@@ -3,7 +3,7 @@ import { EncodedImageVariant } from '../types';
 interface WorkerResponse {
   id: number;
   variants?: Array<{
-    targetWidth: 600 | 1200;
+    targetWidth: 600 | 1200 | 'full';
     buffer: ArrayBuffer;
   }>;
   error?: string;
@@ -56,7 +56,7 @@ export const encodeImageVariants = (
 
 export const getStaticVariantUrl = (
   source: string,
-  targetWidth: 600 | 1200,
+  targetWidth: 600 | 1200 | 'full',
 ): string | null => {
   if (!source || isAnimatedImage('', source)) return null;
 
@@ -65,7 +65,8 @@ export const getStaticVariantUrl = (
     const match = parsed.pathname.match(/^(.*)\.(jpe?g|png|webp)$/i);
     if (!match) return null;
 
-    parsed.pathname = `${match[1]}_w${targetWidth}.webp`;
+    const suffix = targetWidth === 'full' ? 'full' : `w${targetWidth}`;
+    parsed.pathname = `${match[1]}_${suffix}.webp`;
     parsed.search = '';
     parsed.hash = '';
 

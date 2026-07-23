@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { ArrowLeft, Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Download, Loader2, MessageSquare, Trash2, Send, PenBoxIcon, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
 import { unified } from 'unified';
@@ -13,7 +13,12 @@ import rehypeKatex from 'rehype-katex';
 import rehypeReact from 'rehype-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import 'katex/dist/katex.min.css';
-import { getResponsiveImageProps } from '../services/imageVariants';
+import { getResponsiveImageProps, getStaticVariantUrl } from '../services/imageVariants';
+
+interface ZoomedImage {
+  previewSrc: string;
+  originalSrc: string;
+}
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   onZoom?: (src: string) => void;
@@ -86,7 +91,7 @@ export const PostDetail: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentBody, setCommentBody] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<ZoomedImage | null>(null);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
@@ -103,8 +108,13 @@ export const PostDetail: React.FC = () => {
             src={responsive.src}
             srcSet={responsive.srcSet}
             sizes="(max-width: 768px) 100vw, 1200px"
-            onZoom={setZoomedImage}
-            onZoomSrc={originalSrc.split('?')[0]}
+            onZoom={(source) => {
+              setZoomedImage({
+                previewSrc: getStaticVariantUrl(source, 'full') || source,
+                originalSrc: source,
+              });
+            }}
+            onZoomSrc={originalSrc}
             onError={(event) => {
               if (event.currentTarget.dataset.originalFallback === 'true') {
                 event.currentTarget.style.display = 'none';
@@ -357,17 +367,34 @@ export const PostDetail: React.FC = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={() => setZoomedImage(null)}
         >
+          <a
+            href={zoomedImage.originalSrc}
+            download
+            className="absolute top-4 right-16 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm text-white/80 backdrop-blur transition-colors hover:bg-white/20 hover:text-white"
+            onClick={(event) => event.stopPropagation()}
+            title="下载原图"
+            aria-label="下载原图"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">下载原图</span>
+          </a>
           <button 
             className="absolute top-4 right-4 text-white/70 hover:text-white p-2 transition-colors"
             onClick={() => setZoomedImage(null)}
+            aria-label="关闭大图"
           >
             <X size={32} />
           </button>
           <img 
-            src={zoomedImage} 
+            src={zoomedImage.previewSrc}
             alt="Zoomed content" 
             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
+            onError={(event) => {
+              if (event.currentTarget.dataset.originalFallback === 'true') return;
+              event.currentTarget.dataset.originalFallback = 'true';
+              event.currentTarget.src = zoomedImage.originalSrc;
+            }}
           />
         </div>
       )}

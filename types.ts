@@ -22,16 +22,18 @@ export interface Image {
   width: number;
   height: number;
   url: string;
+  storagePath?: string;
   userId: number;
   storageBackend: string;
   webp600Url?: string;
   webp1200Url?: string;
+  webpFullUrl?: string;
   variantsComplete: boolean;
   createdAt: string;
 }
 
 export interface EncodedImageVariant {
-  targetWidth: 600 | 1200;
+  targetWidth: 600 | 1200 | 'full';
   blob: Blob;
 }
 

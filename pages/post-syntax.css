@@ -1,3 +1,25 @@
+.post-content :not(pre) > code {
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 0.25em;
+  padding: 0.12em 0.3em;
+  font-weight: 500;
+  white-space: break-spaces;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.dark .post-content :not(pre) > code {
+  background: #25284c;
+  color: #e0e7ff;
+}
+
+.post-content :not(pre) > code::before,
+.post-content :not(pre) > code::after {
+  content: none;
+}
+
 /* Typography uses a dark background for code blocks in both site themes. */
 .prose pre code.hljs :is(.hljs-comment, .hljs-quote) {
   color: #9ca3af;

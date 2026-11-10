@@ -3,16 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
 import { ArrowLeft, Calendar, Download, Loader2, MessageSquare, Trash2, Send, PenBoxIcon, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { MarkdownTable } from '../components/MarkdownTable';
 import { api } from '../services/api';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
+import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import rehypeReact from 'rehype-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import 'katex/dist/katex.min.css';
+import './post-syntax.css';
 import { getResponsiveImageProps, getStaticVariantUrl } from '../services/imageVariants';
 
 interface ZoomedImage {
@@ -141,12 +144,14 @@ export const PostDetail: React.FC = () => {
       .use(remarkMath)
       .use(remarkRehype)
       .use(rehypeKatex)
+      .use(rehypeHighlight, { plainText: ['text', 'txt', 'plaintext', 'plain'] })
       .use(rehypeReact, { 
         Fragment, 
         jsx, 
         jsxs,
         components: {
-          img: CustomImage
+          img: CustomImage,
+          table: MarkdownTable,
         }
       } as any)
       .process(post.content)

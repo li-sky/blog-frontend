@@ -1,0 +1,14 @@
+.markdown-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 2rem;
+}
+
+.markdown-table-scroll > table {
+  margin-block: 0;
+}
+
+.markdown-table-scroll:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

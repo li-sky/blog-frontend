@@ -1,0 +1,32 @@
+/* Typography uses a dark background for code blocks in both site themes. */
+.prose pre code.hljs :is(.hljs-comment, .hljs-quote) {
+  color: #9ca3af;
+}
+
+.prose pre code.hljs :is(.hljs-keyword, .hljs-selector-tag, .hljs-doctag) {
+  color: #d8b4fe;
+}
+
+.prose pre code.hljs :is(.hljs-string, .hljs-regexp, .hljs-addition) {
+  color: #86efac;
+}
+
+.prose pre code.hljs :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-variable) {
+  color: #fcd34d;
+}
+
+.prose pre code.hljs :is(.hljs-title, .hljs-built_in, .hljs-type, .hljs-tag, .hljs-name, .hljs-attr, .hljs-attribute, .hljs-meta, .hljs-section) {
+  color: #7dd3fc;
+}
+
+.prose pre code.hljs .hljs-deletion {
+  color: #fca5a5;
+}
+
+.prose pre code.hljs .hljs-emphasis {
+  font-style: italic;
+}
+
+.prose pre code.hljs .hljs-strong {
+  font-weight: 700;
+}

@@ -219,9 +219,9 @@ export const Admin: React.FC = () => {
   if (view === 'list') {
     return (
       <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-2">
             {currentUser.roles.includes('admin') && (
               <>
                 <Link to="/settings/images">

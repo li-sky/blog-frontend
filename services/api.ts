@@ -10,12 +10,12 @@ const getHeaders = () => {
   };
 };
 
-const handleResponse = async (response: Response) => {
+const handleResponse = async (response: Response, redirectOnUnauthorized = true) => {
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && redirectOnUnauthorized) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/#/login';
+      if (window.location.pathname !== '/login') window.location.replace('/login');
     }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || 'API Request Failed');
@@ -152,7 +152,7 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
-      const data = await handleResponse(res);
+      const data = await handleResponse(res, false);
       return { ...data, user: normalizeUser(data.user) };
     },
     register: async (payload: RegisterRequest): Promise<AuthResponse> => {

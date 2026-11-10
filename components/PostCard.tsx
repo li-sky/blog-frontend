@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Post } from '../types';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { getStaticVariantUrl } from '../services/imageVariants';
 
 interface PostCardProps {
   post: Post;
-  onClick: (id: number) => void;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { displaySummary, imageUrl } = useMemo(() => {
     const rawSummary = post.summary || '';
     // Match content between %...%
@@ -29,9 +29,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   }, [post.summary, post.content]);
 
   return (
-    <div 
-      onClick={() => onClick(post.id)}
-      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer break-inside-avoid overflow-hidden"
+    <Link
+      to={`/post/${post.id}`}
+      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 break-inside-avoid overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
     >
       {imageUrl && (
         <div className="w-full overflow-hidden">
@@ -74,6 +74,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         </p>
       </div>
 
-    </div>
+    </Link>
   );
 };

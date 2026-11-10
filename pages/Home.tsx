@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Post } from '../types';
 import { PostCard } from '../components/PostCard';
-import { useNavigate } from 'react-router-dom';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -14,7 +13,6 @@ const getColumnCount = () => {
 };
 
 export const Home: React.FC = () => {
-  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -76,7 +74,6 @@ export const Home: React.FC = () => {
               <PostCard
                 key={post.id}
                 post={post}
-                onClick={(id) => navigate(`/post/${id}`)}
               />
             ))}
           </div>

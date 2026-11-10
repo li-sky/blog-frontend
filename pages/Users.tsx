@@ -106,7 +106,7 @@ export const Users: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+      <div className="bg-white dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="用户列表" tabIndex={0}>
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>

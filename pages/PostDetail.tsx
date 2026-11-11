@@ -236,7 +236,7 @@ export const PostDetail: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-600" />
       </div>
     );
   }
@@ -244,7 +244,7 @@ export const PostDetail: React.FC = () => {
   if (!post) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">未找到文章</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">未找到文章</h2>
         <Button onClick={() => navigate('/')} className="mt-4" variant="secondary">
           回家
         </Button>
@@ -262,7 +262,7 @@ export const PostDetail: React.FC = () => {
           )}
         </div>
 
-        <h1 className="md:leading-normal leading-normal text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 serif">
+        <h1 className="md:leading-normal leading-normal text-4xl md:text-5xl font-bold text-black dark:text-gray-100 mb-6 serif">
           {post.title}
         </h1>
         {post.user && (
@@ -273,7 +273,7 @@ export const PostDetail: React.FC = () => {
                 className="h-6 w-6 rounded-full mr-2"
               />
               <div className="mr-2" />
-              <span className="font-medium text-gray-900 dark:text-white">{post.user.username}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{post.user.username}</span>
             </div>
         )}
       </header>
@@ -289,7 +289,7 @@ export const PostDetail: React.FC = () => {
       <hr className="my-12 border-gray-200 dark:border-gray-700" />
 
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
           <MessageSquare className="w-6 h-6 mr-2" />
           锐评 ({comments.length})
         </h3>
@@ -303,7 +303,7 @@ export const PostDetail: React.FC = () => {
               <textarea
                 id="comment"
                 rows={4}
-                className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3"
+                className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm p-3"
                 placeholder="分享你的想法..."
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
@@ -330,7 +330,7 @@ export const PostDetail: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">还没人锐评。成为第一个分享你想法的人吧！</p>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md dark:hover:shadow-lg">
+              <div key={comment.id} className="bg-surface dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md dark:hover:shadow-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center">
                     {comment.user && comment.user.emailSha256 ? (
@@ -340,12 +340,12 @@ export const PostDetail: React.FC = () => {
                         className="h-8 w-8 rounded-full mr-3"
                       />
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold mr-3">
+                      <div className="h-8 w-8 rounded-full bg-accent-100 dark:bg-accent-900/50 flex items-center justify-center text-accent-600 dark:text-accent-400 font-bold mr-3">
                         {(comment.user?.username || comment.userId.toString()).charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {comment.user?.username || `User #${comment.userId}`}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">

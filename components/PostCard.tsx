@@ -31,7 +31,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   return (
     <Link
       to={`/post/${post.id}`}
-      className="group bg-white dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 break-inside-avoid overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+      className="group bg-surface dark:bg-gray-800 block border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 break-inside-avoid overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500"
     >
       {imageUrl && (
         <div className="w-full overflow-hidden">
@@ -62,7 +62,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             )}
         </div>
 
-        <h5 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-serif font-extrabold">
+        <h5 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-gray-100 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors font-serif font-extrabold">
           {post.title}
         </h5>
         

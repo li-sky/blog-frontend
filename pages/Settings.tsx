@@ -87,7 +87,7 @@ export const Settings: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
           <SettingsIcon className="mr-3 h-8 w-8" />
           System Settings
         </h1>
@@ -99,14 +99,14 @@ export const Settings: React.FC = () => {
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden min-h-[600px]">
+      <div className="bg-surface dark:bg-gray-800 shadow rounded-lg overflow-hidden min-h-[600px]">
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('general')}
               className={`${
                 activeTab === 'general'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  ? 'border-accent-500 text-accent-600 dark:text-accent-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center`}
             >
@@ -117,7 +117,7 @@ export const Settings: React.FC = () => {
               onClick={() => setActiveTab('users')}
               className={`${
                 activeTab === 'users'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  ? 'border-accent-500 text-accent-600 dark:text-accent-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center`}
             >
@@ -128,7 +128,7 @@ export const Settings: React.FC = () => {
               onClick={() => setActiveTab('roles')}
               className={`${
                 activeTab === 'roles'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  ? 'border-accent-500 text-accent-600 dark:text-accent-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center`}
             >
@@ -143,7 +143,7 @@ export const Settings: React.FC = () => {
             <>
               {isLoading ? (
                 <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600"></div>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -157,7 +157,7 @@ export const Settings: React.FC = () => {
                       {editingKey === setting.key ? (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium text-indigo-600 dark:text-indigo-400">
+                            <h3 className="text-lg font-medium text-accent-600 dark:text-accent-400">
                               {setting.key}
                             </h3>
                             <div className="flex space-x-2">
@@ -180,7 +180,7 @@ export const Settings: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Value</label>
                             <input
                               type="text"
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                             />
@@ -189,7 +189,7 @@ export const Settings: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <input
                               type="text"
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                               value={editDescription}
                               onChange={(e) => setEditDescription(e.target.value)}
                             />
@@ -198,10 +198,10 @@ export const Settings: React.FC = () => {
                       ) : (
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
+                            <p className="text-sm font-medium text-accent-600 dark:text-accent-400 truncate">
                               {setting.key}
                             </p>
-                            <p className="mt-1 text-sm text-gray-900 dark:text-white font-mono bg-gray-100 dark:bg-gray-900 inline-block px-2 py-0.5 rounded">
+                            <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 font-mono bg-gray-100 dark:bg-gray-900 inline-block px-2 py-0.5 rounded">
                               {setting.value}
                             </p>
                             {setting.description && (
@@ -214,7 +214,7 @@ export const Settings: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => handleEdit(setting)}
-                              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                              className="text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300"
                             >
                               Edit
                             </Button>

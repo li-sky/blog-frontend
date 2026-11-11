@@ -96,17 +96,17 @@ export const Users: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">User Management</h2>
         <button
           onClick={() => setShowCreateAdminModal(true)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          className="flex items-center px-4 py-2 bg-accent-600 text-white rounded-md hover:bg-accent-700 transition-colors"
         >
           <UserPlus className="w-4 h-4 mr-2" />
           Create Admin
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="用户列表" tabIndex={0}>
+      <div className="bg-surface dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="用户列表" tabIndex={0}>
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
@@ -118,11 +118,11 @@ export const Users: React.FC = () => {
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-surface dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {users.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{user.username}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{user.username}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {user.roles?.map(role => (
@@ -135,7 +135,7 @@ export const Users: React.FC = () => {
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => startEdit(user)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4">
+                  <button onClick={() => startEdit(user)} className="text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300 mr-4">
                     <Edit className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDelete(user.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
@@ -151,9 +151,9 @@ export const Users: React.FC = () => {
       {/* Create Admin Modal */}
       {showCreateAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create Admin User</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Create Admin User</h2>
               <button onClick={() => setShowCreateAdminModal(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-5 h-5" />
               </button>
@@ -164,7 +164,7 @@ export const Users: React.FC = () => {
                 <input
                   type="text"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={formData.username}
                   onChange={e => setFormData({ ...formData, username: e.target.value })}
                 />
@@ -174,7 +174,7 @@ export const Users: React.FC = () => {
                 <input
                   type="email"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -185,7 +185,7 @@ export const Users: React.FC = () => {
                   type="password"
                   required
                   minLength={12}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
                 />
@@ -194,13 +194,13 @@ export const Users: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateAdminModal(false)}
-                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-accent-600 border border-transparent rounded-md hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
                 >
                   Create
                 </button>
@@ -213,9 +213,9 @@ export const Users: React.FC = () => {
       {/* Edit User Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit User: {editingUser.username}</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Edit User: {editingUser.username}</h2>
               <button onClick={() => setEditingUser(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-5 h-5" />
               </button>
@@ -225,7 +225,7 @@ export const Users: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                 <input
                   type="text"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={editFormData.username || ''}
                   onChange={e => setEditFormData({ ...editFormData, username: e.target.value })}
                 />
@@ -234,7 +234,7 @@ export const Users: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                 <input
                   type="email"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={editFormData.email || ''}
                   onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
                 />
@@ -244,7 +244,7 @@ export const Users: React.FC = () => {
                 <input
                   type="password"
                   minLength={12}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={editFormData.password || ''}
                   onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
                 />
@@ -265,7 +265,7 @@ export const Users: React.FC = () => {
                             setSelectedRoleIds(selectedRoleIds.filter(id => id !== role.id));
                           }
                         }}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-300 rounded"
                       />
                       <label htmlFor={`role-${role.id}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                         {role.name}
@@ -278,13 +278,13 @@ export const Users: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-accent-600 border border-transparent rounded-md hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
                 >
                   Save Changes
                 </button>

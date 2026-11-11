@@ -138,7 +138,7 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-gray-900 font-sans transition-colors duration-500">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-surface dark:bg-gray-900 font-sans transition-colors duration-500">
       
       {/* Left Side: Art & Poetry */}
       <div className="lg:w-1/2 relative overflow-hidden flex flex-col items-center justify-center p-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
@@ -235,10 +235,10 @@ export const Register: React.FC = () => {
       </div>
 
       {/* Right Side: Registration Form */}
-      <div className="lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-white dark:bg-gray-900">
+      <div className="lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-surface dark:bg-gray-900">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-sans">让我访问！</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-sans">让我访问！</h2>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -255,7 +255,7 @@ export const Register: React.FC = () => {
                   type="text"
                   value={form.username}
                   onChange={handleChange('username')}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
                   placeholder="jane-doe"
                   required
                 />
@@ -267,7 +267,7 @@ export const Register: React.FC = () => {
                   type="email"
                   value={form.email}
                   onChange={handleChange('email')}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
                   placeholder="admin@example.com"
                   required
                 />
@@ -279,7 +279,7 @@ export const Register: React.FC = () => {
                   type="password"
                   value={form.password}
                   onChange={handleChange('password')}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
                   placeholder="Minimum 12 characters"
                   required
                 />
@@ -288,7 +288,7 @@ export const Register: React.FC = () => {
 
             <Button 
               type="submit" 
-              className="w-full py-3 text-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 rounded-xl transition-colors" 
+              className="w-full py-3 text-lg bg-accent-600 text-white hover:bg-accent-700 rounded-xl transition-colors"
               isLoading={isSubmitting}
             >
               Create Account

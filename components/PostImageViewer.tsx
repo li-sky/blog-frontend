@@ -149,7 +149,7 @@ export function PostImageViewer({ previewSrc, originalSrc, alt, onClose }: PostI
     onClose();
   }
 
-  const buttonClass = 'inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white/10 px-3 text-sm text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+  const buttonClass = 'inline-flex h-11 items-center justify-center gap-2 rounded-full bg-surface/10 px-3 text-sm text-white hover:bg-surface/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
 
   return createPortal(
     <dialog

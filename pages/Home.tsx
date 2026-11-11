@@ -62,7 +62,7 @@ export const Home: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-600" />
       </div>
     );
   }
@@ -91,7 +91,7 @@ export const Home: React.FC = () => {
       </div>
 
       {!isLoading && posts.length === 0 && !error && (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+        <div className="text-center py-20 bg-surface rounded-xl border border-dashed border-gray-300">
           <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">尚无文章</h3>
           <p className="text-gray-500 mt-1">快更新！</p>

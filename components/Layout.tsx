@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { PenTool, User, Sparkles, Sun, Moon, Monitor, Settings, Users, LogOut } from 'lucide-react';
+import { PenTool, User, Sparkles, LogOut } from 'lucide-react';
 import { User as UserType } from '../types';
 import { api } from '../services/api';
+import { ThemeControls } from './ThemeControls';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -82,74 +83,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     window.location.reload();
   };
 
-  // Theme logic
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-    const saved = localStorage.getItem('theme');
-    return (saved as 'light' | 'dark' | 'system') || 'system';
-  });
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const applyTheme = () => {
-      const systemDark = mediaQuery.matches;
-      const isDark = theme === 'dark' || (theme === 'system' && systemDark);
-
-      if (isDark) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-    };
-
-    applyTheme();
-    localStorage.setItem('theme', theme);
-
-    const handleChange = () => {
-      if (theme === 'system') {
-        applyTheme();
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      
-      if (prev === 'system') {
-        return systemDark ? 'light' : 'dark';
-      }
-      
-      if (prev === 'light') {
-        return systemDark ? 'dark' : 'system';
-      }
-      
-      // prev === 'dark'
-      return systemDark ? 'system' : 'light';
-    });
-  };
-
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light': return <Sun className="w-6 h-6" />;
-      case 'dark': return <Moon className="w-6 h-6" />;
-      case 'system': return <Monitor className="w-6 h-6" />;
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-300">
+      <header className="bg-surface dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">Skyli的小站</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight transition-colors">Skyli的小站</span>
               </Link>
             </div>
 
@@ -168,9 +110,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-0 mt-2 w-48 bg-surface dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100">
                       <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.username || user.email || 'User'}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user.username || user.email || 'User'}</p>
                         {user.email && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>}
                       </div>
                       
@@ -201,7 +143,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     to="/login" 
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
                       isActive('/login') 
-                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' 
+                        ? 'bg-accent-50 text-accent-700 dark:bg-accent-900/50 dark:text-accent-300'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
                     }`}
                   >
@@ -212,7 +154,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     to="/register" 
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
                       isActive('/register') 
-                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' 
+                        ? 'bg-accent-50 text-accent-700 dark:bg-accent-900/50 dark:text-accent-300'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
                     }`}
                   >
@@ -234,7 +176,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-300">
+      <footer className="bg-surface dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors">
@@ -244,14 +186,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </footer>
 
-      {/* Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="fixed bottom-10 right-10 w-14 h-14 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 z-[60]"
-        title={`Current theme: ${theme}`}
-      >
-        {getThemeIcon()}
-      </button>
+      <ThemeControls />
     </div>
   );
 };

@@ -187,7 +187,7 @@ export const Admin: React.FC = () => {
     return (
       <div className="max-w-5xl mx-auto">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
           <div className="flex flex-wrap gap-2">
             {currentUser.roles.includes('admin') && (
               <>
@@ -211,7 +211,7 @@ export const Admin: React.FC = () => {
         </div>
 
         {message && <p role="alert" className="mb-4 text-sm text-red-600">{message}</p>}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-surface dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
@@ -222,11 +222,11 @@ export const Admin: React.FC = () => {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-surface dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {posts.map((post, index) => (
                 <tr key={post.id ?? `post-${index}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{post.title}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{post.title}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -242,11 +242,11 @@ export const Admin: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {(post.status === 'draft' || post.hasUnpublishedChanges) && typeof post.id === 'number' && (
-                      <button onClick={() => handlePublish(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" title="发布最新草稿">
+                      <button onClick={() => handlePublish(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300" title="发布最新草稿">
                         <Globe className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => handleEdit(post)} className="inline-flex h-11 w-11 items-center justify-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="编辑">
+                    <button onClick={() => handleEdit(post)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300" title="编辑">
                       <FileText className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleDelete(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="删除">

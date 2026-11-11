@@ -68,3 +68,11 @@ Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test compo
 后台“图片管理”支持分页缩略图、尺寸与原图大小、放大预览、复制 URL/Markdown、上传和删除，替换原 Upgrade Images 页面。删除前核实文章正文、封面与草稿引用；后端也会拒绝删除仍在使用的图片。
 
 上传保留原图下载，600/1200px 用于正文预览；大图预览限制长边 8192px、总像素 16MP，避免超宽全景图超过 WebP 限制。图片处理在 Worker 中执行，并限制文件大小和处理时长。
+
+## 配色
+
+默认与设置失效时均使用 Solarized，旧灰白/靛蓝配色已移除。提供 Solarized、VS Code、GitHub、Dracula、Nord、Gruvbox、Catppuccin、Midnight、Monokai；每套都有浅色/深色显示，明暗模式也可跟随系统。选择保存在本机并同步到同源其他标签页。
+
+普通点击右下角按钮切换明暗；手机长按约550ms、桌面右键或键盘Shift+F10打开配色弹窗。长按时淡环从顶部逆时针填满，提前松开、滑动或取消会停止；长按完成后的合成点击不会再次切换明暗。弹窗支持Esc、点击外侧及关闭按钮。
+
+全站界面、文章代码高亮、Milkdown/CodeMirror和资源卡片共用配色变量；切换不会重建编辑文档或清空撤销历史。色板来自[VS Code](https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults)、[GitHub Primer](https://github.com/primer/primitives)、[Dracula / Alucard](https://draculatheme.com/spec)、[Nord](https://www.nordtheme.com/docs/colors-and-palettes/)、[Gruvbox](https://github.com/morhetz/gruvbox)、[Catppuccin](https://catppuccin.com/palette/)、[Solarized](https://ethanschoonover.com/solarized/)及[Monokai](https://github.com/microsoft/vscode/tree/main/extensions/theme-monokai)，按网页对比度适配；Midnight为本站午夜蓝方案。

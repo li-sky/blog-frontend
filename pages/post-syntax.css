@@ -1,6 +1,6 @@
 .post-content :not(pre) > code {
-  background: #eef2ff;
-  color: #3730a3;
+  background: var(--site-code);
+  color: var(--site-accent);
   border-radius: 0.25em;
   padding: 0.12em 0.3em;
   font-weight: 500;
@@ -10,39 +10,34 @@
   box-decoration-break: clone;
 }
 
-.dark .post-content :not(pre) > code {
-  background: #25284c;
-  color: #e0e7ff;
-}
-
 .post-content :not(pre) > code::before,
 .post-content :not(pre) > code::after {
   content: none;
 }
 
-/* Typography uses a dark background for code blocks in both site themes. */
+/* Syntax colors follow the selected light/dark palette. */
 .prose pre code.hljs :is(.hljs-comment, .hljs-quote) {
-  color: #9ca3af;
+  color: var(--site-comment);
 }
 
 .prose pre code.hljs :is(.hljs-keyword, .hljs-selector-tag, .hljs-doctag) {
-  color: #d8b4fe;
+  color: var(--site-keyword);
 }
 
 .prose pre code.hljs :is(.hljs-string, .hljs-regexp, .hljs-addition) {
-  color: #86efac;
+  color: var(--site-string);
 }
 
 .prose pre code.hljs :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-variable) {
-  color: #fcd34d;
+  color: var(--site-number);
 }
 
 .prose pre code.hljs :is(.hljs-title, .hljs-built_in, .hljs-type, .hljs-tag, .hljs-name, .hljs-attr, .hljs-attribute, .hljs-meta, .hljs-section) {
-  color: #7dd3fc;
+  color: var(--site-function);
 }
 
 .prose pre code.hljs .hljs-deletion {
-  color: #fca5a5;
+  color: var(--site-error);
 }
 
 .prose pre code.hljs .hljs-emphasis {

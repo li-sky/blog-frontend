@@ -8,6 +8,7 @@ import { TextSelection } from '@milkdown/prose/state';
 import { insert } from '@milkdown/utils';
 import { api } from '../services/api';
 import { encodeImageVariants } from '../services/imageVariants';
+import { editorPalette } from '../services/editorPalette';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './crepe-theme.css';
@@ -95,6 +96,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       root: containerRef.current,
       defaultValue: value || '',
       featureConfigs: {
+        [Crepe.Feature.CodeMirror]: { theme: editorPalette },
         [Crepe.Feature.BlockEdit]: {
           buildMenu: (builder) => {
             const resources = builder.addGroup('resources', '文件与链接');
@@ -239,19 +241,19 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         {moreOpen && <div className="crepe-mobile-more"><button type="button" onClick={()=>runMobile('bold')}>粗体</button><button type="button" onClick={()=>runMobile('heading')}>二级标题</button><button type="button" onClick={()=>runMobile('list')}>列表</button></div>}
       </div>
       {!isReady && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/70 text-sm text-indigo-500">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-accent-200 bg-surface/70 text-sm text-accent-500">
           Initializing editor…
         </div>
       )}
       {isUploading && (
-        <div className="absolute left-4 right-4 top-4 z-20 rounded-lg border border-indigo-200 bg-white/90 px-3 py-2 text-xs text-indigo-600 shadow">
+        <div className="absolute left-4 right-4 top-4 z-20 rounded-lg border border-accent-200 bg-surface/90 px-3 py-2 text-xs text-accent-600 shadow">
           <div className="mb-1 flex items-center justify-between">
             <span>正在上传文件…</span>
             <span>{uploadProgress}%</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded bg-indigo-100">
+          <div className="h-1.5 w-full overflow-hidden rounded bg-accent-100">
             <div
-              className="h-full rounded bg-indigo-500 transition-all"
+              className="h-full rounded bg-accent-500 transition-all"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>

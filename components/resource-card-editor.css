@@ -1,28 +1,28 @@
-.milkdown .ProseMirror .editor-resource-card { position:relative; width:100%; max-width:330px; margin:24px auto; padding:0; color:var(--crepe-color-on-background, #334155); }
-.milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode { outline:2px solid var(--crepe-color-primary, #6366f1); outline-offset:3px; border-radius:14px; }
+.milkdown .ProseMirror .editor-resource-card { position:relative; width:100%; max-width:330px; margin:24px auto; padding:0; color:var(--crepe-color-on-background, var(--site-text)); }
+.milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode { outline:2px solid var(--crepe-color-primary, var(--site-accent)); outline-offset:3px; border-radius:14px; }
 .milkdown .ProseMirror .editor-resource-card-preview { cursor:text; }
 .milkdown .ProseMirror .editor-resource-card-open { text-decoration:none; cursor:pointer; }
-.milkdown .ProseMirror .editor-resource-card-source { display:none; border:1px solid var(--crepe-color-outline, #cbd5e1); border-radius:12px; background:var(--crepe-color-surface, #f8fafc); overflow:hidden; }
+.milkdown .ProseMirror .editor-resource-card-source { display:none; border:1px solid var(--crepe-color-outline, var(--site-border)); border-radius:12px; background:var(--crepe-color-surface, var(--site-canvas)); overflow:hidden; }
 .milkdown .ProseMirror .editor-resource-card.card-source-active .editor-resource-card-source,
 .milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-source { display:block; }
 .milkdown .ProseMirror .editor-resource-card.card-source-active .editor-resource-card-preview,
 .milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-preview { display:none; }
 .milkdown .ProseMirror .editor-resource-card-source pre { display:block; margin:0; padding:12px; overflow-x:auto; background:transparent; border:0; border-radius:0; box-shadow:none; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
 .milkdown .ProseMirror .editor-resource-card-source code { display:block; margin:0; padding:0; background:transparent; border:0; box-shadow:none; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
-.milkdown .ProseMirror .editor-resource-card-error { color:#dc2626; font-size:12px; }
-.milkdown .ProseMirror .editor-resource-card-status { color:var(--crepe-color-on-surface-variant, #64748b); font-size:12px; }
+.milkdown .ProseMirror .editor-resource-card-error { color:var(--site-error); font-size:12px; }
+.milkdown .ProseMirror .editor-resource-card-status { color:var(--crepe-color-on-surface-variant, var(--site-muted)); font-size:12px; }
 .milkdown .ProseMirror .editor-resource-card-status:empty,
 .milkdown .ProseMirror .editor-resource-card-error:empty { display:none; }
 
-.milkdown .ProseMirror .editor-resource-card-delete { display:none; position:absolute; top:-10px; right:-10px; z-index:5; width:24px; height:24px; padding:0; border:1px solid #cbd5e1; border-radius:50%; background:var(--crepe-color-background,white); color:var(--crepe-color-on-background,#334155); font-size:18px; line-height:20px; cursor:pointer; }
+.milkdown .ProseMirror .editor-resource-card-delete { display:none; position:absolute; top:-10px; right:-10px; z-index:5; width:24px; height:24px; padding:0; border:1px solid var(--site-border); border-radius:50%; background:var(--site-surface); color:var(--crepe-color-on-background,var(--site-text)); font-size:18px; line-height:20px; cursor:pointer; }
 .milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode .editor-resource-card-delete { display:block; }
 .milkdown .ProseMirror .editor-resource-card-preview { cursor:default; }
 /* Crepe hides native carets globally for its virtual cursor. Use the browser's
    caret inside this native contentDOM so wrapped source lines remain precise. */
 .milkdown .ProseMirror .editor-resource-card-source pre,
-.milkdown .ProseMirror .editor-resource-card-source code { caret-color:var(--crepe-color-on-background,#334155); cursor:text; }
+.milkdown .ProseMirror .editor-resource-card-source code { caret-color:var(--crepe-color-on-background,var(--site-text)); cursor:text; }
 .milkdown .ProseMirror:has(.editor-resource-card.card-source-active) .prosemirror-virtual-cursor { visibility:hidden; }
-.milkdown .ProseMirror.ProseMirror-focused .editor-resource-card.card-source-active .editor-resource-card-source { border-color:var(--crepe-color-primary,#6366f1); box-shadow:0 0 0 1px var(--crepe-color-primary,#6366f1); }
+.milkdown .ProseMirror.ProseMirror-focused .editor-resource-card.card-source-active .editor-resource-card-source { border-color:var(--crepe-color-primary,var(--site-accent)); box-shadow:0 0 0 1px var(--crepe-color-primary,var(--site-accent)); }
 
 /* Contain margins for stable source/preview height measurements. */
 .milkdown .ProseMirror .editor-resource-card { display:flow-root; }
@@ -30,5 +30,5 @@
 .milkdown .ProseMirror .editor-resource-card.is-card-transitioning { overflow:hidden; border-radius:12px; }
 @media (max-width:640px) {
   .milkdown .ProseMirror .editor-resource-card-delete { width:44px; height:44px; top:-20px; right:-20px; line-height:44px; border:0; background:transparent; isolation:isolate; }
-  .milkdown .ProseMirror .editor-resource-card-delete::before { content:""; position:absolute; inset:10px; border:1px solid #cbd5e1; border-radius:50%; background:var(--crepe-color-background,white); z-index:-1; }
+  .milkdown .ProseMirror .editor-resource-card-delete::before { content:""; position:absolute; inset:10px; border:1px solid var(--site-border); border-radius:50%; background:var(--site-surface); z-index:-1; }
 }

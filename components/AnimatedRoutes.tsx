@@ -57,8 +57,8 @@ export const AnimatedRoutes: React.FC = () => {
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
         <Route path="*" element={
           <div className="py-20 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">页面不存在</h1>
-            <Link to="/" className="mt-4 inline-block text-indigo-600 underline dark:text-indigo-400">返回首页</Link>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">页面不存在</h1>
+            <Link to="/" className="mt-4 inline-block text-accent-600 underline dark:text-accent-400">返回首页</Link>
           </div>
         } />
       </Routes>

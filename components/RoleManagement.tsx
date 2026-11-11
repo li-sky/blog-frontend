@@ -103,17 +103,17 @@ export const RoleManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Role Management</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Role Management</h2>
         <button
           onClick={startCreate}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          className="flex items-center px-4 py-2 bg-accent-600 text-white rounded-md hover:bg-accent-700 transition-colors"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Role
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="角色列表" tabIndex={0}>
+      <div className="bg-surface dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="角色列表" tabIndex={0}>
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
@@ -123,11 +123,11 @@ export const RoleManagement: React.FC = () => {
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-surface dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {roles.map((role) => (
               <tr key={role.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{role.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{role.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex flex-wrap gap-1">
                     {role.permissions?.map((perm, idx) => (
@@ -138,7 +138,7 @@ export const RoleManagement: React.FC = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => startEdit(role)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4">
+                  <button onClick={() => startEdit(role)} className="text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300 mr-4">
                     <Edit className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDelete(role.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
@@ -154,9 +154,9 @@ export const RoleManagement: React.FC = () => {
       {/* Create/Edit Role Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{editingRole ? 'Edit Role' : 'Create Role'}</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{editingRole ? 'Edit Role' : 'Create Role'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-5 h-5" />
               </button>
@@ -167,7 +167,7 @@ export const RoleManagement: React.FC = () => {
                 <input
                   type="text"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
                   value={roleName}
                   onChange={e => setRoleName(e.target.value)}
                 />
@@ -180,14 +180,14 @@ export const RoleManagement: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Permission Name (e.g. post.manage)"
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white sm:text-sm p-2 border"
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100 sm:text-sm p-2 border"
                       value={newPermName}
                       onChange={e => setNewPermName(e.target.value)}
                     />
                     <input
                       type="text"
                       placeholder="Description"
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white sm:text-sm p-2 border"
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100 sm:text-sm p-2 border"
                       value={newPermDesc}
                       onChange={e => setNewPermDesc(e.target.value)}
                     />
@@ -201,9 +201,9 @@ export const RoleManagement: React.FC = () => {
                   </div>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {permissions.map((perm, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-white dark:bg-gray-600 p-2 rounded border border-gray-200 dark:border-gray-500">
+                      <div key={idx} className="flex justify-between items-center bg-surface dark:bg-gray-600 p-2 rounded border border-gray-200 dark:border-gray-500">
                         <div>
-                          <span className="font-medium text-gray-900 dark:text-white">{perm.name}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{perm.name}</span>
                           <span className="ml-2 text-sm text-gray-500 dark:text-gray-300">({perm.description})</span>
                         </div>
                         <button
@@ -226,13 +226,13 @@ export const RoleManagement: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                  className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-accent-600 border border-transparent rounded-md hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
                 >
                   Save Role
                 </button>

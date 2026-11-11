@@ -157,6 +157,37 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
   let lastMetadataURL = '';
   let artworkKey = '';
   const dom = document.createElement('div'); dom.className = 'editor-resource-card';
+  let modeInitialized = false;
+  let wasSourceVisible = false;
+  let animationFrame = 0;
+  let heightAnimation: Animation | undefined;
+  let fadeAnimation: Animation | undefined;
+  const animateModeChange = (fromHeight: number, sourceVisible: boolean) => {
+    cancelAnimationFrame(animationFrame);
+    heightAnimation?.cancel(); heightAnimation = undefined;
+    fadeAnimation?.cancel(); fadeAnimation = undefined;
+    dom.classList.remove('is-card-transitioning');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !dom.animate) return;
+    // Outer decorations and contentDOM children are updated after NodeView.update.
+    // Measure their natural target height on the next frame; never touch selection.
+    animationFrame = requestAnimationFrame(() => {
+      animationFrame = 0;
+      if (destroyed || !dom.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const toHeight = dom.getBoundingClientRect().height;
+      if (Math.abs(fromHeight - toHeight) < 1) return;
+      dom.classList.add('is-card-transitioning');
+      const animation = dom.animate([{ height: `${fromHeight}px` },{ height: `${toHeight}px` }],{
+        duration:270, easing:'cubic-bezier(.22,1.12,.36,1)',
+      });
+      heightAnimation = animation;
+      const complete = () => {
+        if (heightAnimation !== animation) return;
+        heightAnimation = undefined; dom.classList.remove('is-card-transitioning');
+      };
+      animation.onfinish = complete; animation.oncancel = complete;
+      fadeAnimation = (sourceVisible ? sourcePanel : preview).animate([{ opacity:.72 },{ opacity:1 }],{ duration:190, easing:'ease-out' });
+    });
+  };
   const enter = () => { const pos = getPos(); if (pos === undefined) return; view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc,pos + 1))); view.focus(); };
   const preview = document.createElement('div'); preview.className = 'resource-card editor-resource-card-preview'; preview.contentEditable = 'false';
   const artwork = document.createElement('a'); artwork.className = 'resource-card-artwork editor-resource-card-open'; artwork.rel = 'noopener noreferrer';
@@ -165,8 +196,7 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
   const body = document.createElement('span'); body.className = 'resource-card-body';
   const title = document.createElement('strong'); const subtitle = document.createElement('small'); body.append(title,subtitle); preview.append(artwork,body);
   const sourcePanel = document.createElement('div'); sourcePanel.className = 'editor-resource-card-source';
-  const heading = document.createElement('div'); heading.className = 'editor-resource-card-source-heading'; heading.contentEditable = 'false'; heading.textContent = 'card.json · Esc 返回正文';
-  const pre = document.createElement('pre'); const contentDOM = document.createElement('code'); pre.append(contentDOM); sourcePanel.append(heading,pre);
+  const pre = document.createElement('pre'); const contentDOM = document.createElement('code'); pre.append(contentDOM); sourcePanel.append(pre);
   const error = document.createElement('div'); error.className = 'editor-resource-card-error'; error.contentEditable = 'false';
   const status = document.createElement('div'); status.className = 'editor-resource-card-status'; status.contentEditable = 'false'; status.setAttribute('aria-live','polite');
   const removeButton = document.createElement('button');
@@ -197,6 +227,9 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
   };
   const sync = () => {
     const attrs = parseCardSource(node.textContent,node.attrs);
+    const sourceVisible = active() || !attrs;
+    const modeChanged = modeInitialized && sourceVisible !== wasSourceVisible && dom.isConnected;
+    const oldHeight = modeChanged ? dom.getBoundingClientRect().height : 0;
     const current = attrs || node.attrs as CardAttrs; const isFile = current.kind === 'file';
     dom.dataset.resourceCard = current.kind; preview.dataset.kind = current.kind;
     title.textContent = current.name || (isFile ? '附件' : '链接卡片');
@@ -219,6 +252,8 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
     if (isActive && !wasActive) { generation++; controller?.abort(); status.textContent = ''; }
     if (!isActive && wasActive) queueMicrotask(() => { if (!destroyed) void fetchMetadata(); });
     wasActive = isActive;
+    if (modeChanged) animateModeChange(oldHeight,sourceVisible);
+    wasSourceVisible = sourceVisible; modeInitialized = true;
   };
   // Clicking outside must leave the card even when the destination is not editable.
   const leaveOnOutside = (event: Event) => {
@@ -243,7 +278,7 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
     ignoreMutation(mutation: { type: string; target: Node }) { return mutation.type !== 'selection' && !contentDOM.contains(mutation.target); },
     selectNode() { dom.classList.add('ProseMirror-selectednode'); },
     deselectNode() { dom.classList.remove('ProseMirror-selectednode'); },
-    destroy() { destroyed = true; generation++; controller?.abort(); document.removeEventListener('pointerdown',leaveOnOutside,true); },
+    destroy() { destroyed = true; generation++; controller?.abort(); cancelAnimationFrame(animationFrame); heightAnimation?.cancel(); fadeAnimation?.cancel(); document.removeEventListener('pointerdown',leaveOnOutside,true); },
   };
 });
 

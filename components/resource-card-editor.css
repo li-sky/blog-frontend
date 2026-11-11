@@ -7,7 +7,6 @@
 .milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-source { display:block; }
 .milkdown .ProseMirror .editor-resource-card.card-source-active .editor-resource-card-preview,
 .milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-preview { display:none; }
-.milkdown .ProseMirror .editor-resource-card-source-heading { display:block; padding:8px 12px; border-bottom:1px solid var(--crepe-color-outline, #cbd5e1); font-size:11px; color:var(--crepe-color-on-surface-variant, #64748b); }
 .milkdown .ProseMirror .editor-resource-card-source pre { display:block; margin:0; padding:12px; overflow-x:auto; background:transparent; border:0; border-radius:0; box-shadow:none; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
 .milkdown .ProseMirror .editor-resource-card-source code { display:block; margin:0; padding:0; background:transparent; border:0; box-shadow:none; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
 .milkdown .ProseMirror .editor-resource-card-error { color:#dc2626; font-size:12px; }
@@ -18,3 +17,14 @@
 .milkdown .ProseMirror .editor-resource-card-delete { display:none; position:absolute; top:-10px; right:-10px; z-index:5; width:24px; height:24px; padding:0; border:1px solid #cbd5e1; border-radius:50%; background:var(--crepe-color-background,white); color:var(--crepe-color-on-background,#334155); font-size:18px; line-height:20px; cursor:pointer; }
 .milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode .editor-resource-card-delete { display:block; }
 .milkdown .ProseMirror .editor-resource-card-preview { cursor:default; }
+/* Crepe hides native carets globally for its virtual cursor. Use the browser's
+   caret inside this native contentDOM so wrapped source lines remain precise. */
+.milkdown .ProseMirror .editor-resource-card-source pre,
+.milkdown .ProseMirror .editor-resource-card-source code { caret-color:var(--crepe-color-on-background,#334155); cursor:text; }
+.milkdown .ProseMirror:has(.editor-resource-card.card-source-active) .prosemirror-virtual-cursor { visibility:hidden; }
+.milkdown .ProseMirror.ProseMirror-focused .editor-resource-card.card-source-active .editor-resource-card-source { border-color:var(--crepe-color-primary,#6366f1); box-shadow:0 0 0 1px var(--crepe-color-primary,#6366f1); }
+
+/* Contain margins for stable source/preview height measurements. */
+.milkdown .ProseMirror .editor-resource-card { display:flow-root; }
+.milkdown .ProseMirror .editor-resource-card > .resource-card { margin:0 auto; }
+.milkdown .ProseMirror .editor-resource-card.is-card-transitioning { overflow:hidden; border-radius:12px; }

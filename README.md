@@ -35,3 +35,5 @@ This contains everything you need to run the blog UI locally.
 作者metadata接口GET /api/v1/links/metadata?url=...需要JWT与upload_image权限，返回url/title/icon/description。阅读页直接使用已保存metadata；不在每次浏览时抓取网页。附件公开链接可下载，非私密存储，后端接口及存储说明见后端README。
 
 Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test components/ResourceLink.test.jsx components/resourceCardMarkdown.test.jsx；npx tsc --noEmit；npm run build。浏览器另外验证选中/编辑/点外退出、方向键、无效源码恢复、删除与撤销。
+
+源码区显式启用原生 caret，避免 Crepe 虚拟光标隐藏浏览器光标的冲突；只有源码编辑状态禁用虚拟光标绘制。展开/收起使用轻阻尼高度动画，减少动态效果设置下关闭动画。

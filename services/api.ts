@@ -1,4 +1,4 @@
-import { AuthResponse, Comment, CommentListResponse, EncodedImageVariant, Image, ImageListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
+import { AuthResponse, DraftContent, PostDraft, Comment, CommentListResponse, EncodedImageVariant, Image, ImageListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -10,6 +10,10 @@ const getHeaders = () => {
   };
 };
 
+export class APIError extends Error {
+  constructor(message: string, public status: number, public data: any = {}) { super(message); this.name = 'APIError'; }
+}
+
 const handleResponse = async (response: Response, redirectOnUnauthorized = true) => {
   if (!response.ok) {
     if (response.status === 401 && redirectOnUnauthorized) {
@@ -18,7 +22,7 @@ const handleResponse = async (response: Response, redirectOnUnauthorized = true)
       if (window.location.pathname !== '/login') window.location.replace('/login');
     }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'API Request Failed');
+    throw new APIError(errorData.error || 'API Request Failed', response.status, errorData);
   }
   if (response.status === 204) return null;
   return response.json();
@@ -52,6 +56,21 @@ const normalizeDate = (value: any): string => {
   return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
 };
 
+const optionalDate = (value: any): string | null => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
+const normalizeDraft = (data: any): PostDraft => ({
+  ...data, postId: Number(data.postId ?? data.postID ?? data.id),
+  title: data.title ?? '', summary: data.summary ?? '', body: data.body ?? '',
+  version: Number(data.version ?? data.draftVersion ?? 0),
+  updatedAt: optionalDate(data.updatedAt),
+  publishedAt: optionalDate(data.publishedAt), publishedUpdatedAt: optionalDate(data.publishedUpdatedAt),
+  hasUnpublishedChanges: !!data.hasUnpublishedChanges,
+});
+
 const normalizePost = (post: any): Post => {
   if (!post) {
     return {
@@ -73,6 +92,10 @@ const normalizePost = (post: any): Post => {
     ...rest,
     id: normalizedId,
     content: content ?? body ?? '',
+    publicationTimeKnown: !!(post.publicationTimeKnown ?? post.PublicationTimeKnown ?? post.publication_time_known),
+    publishedAt: optionalDate(post.publishedAt ?? post.PublishedAt ?? post.published_at),
+    publishedUpdatedAt: optionalDate(post.publishedUpdatedAt ?? post.PublishedUpdatedAt ?? post.published_updated_at),
+    draftUpdatedAt: optionalDate(post.draftUpdatedAt),
     createdAt: normalizeDate(created),
     updatedAt: normalizeDate(updated),
   } as Post;
@@ -334,7 +357,7 @@ export const api = {
       const query = new URLSearchParams({ 
         limit: (params.limit || 20).toString(), 
         offset: (params.offset || 0).toString(),
-        sort: 'created_at',
+        sort: 'published_at',
         order: 'desc'
       });
       const res = await fetch(`${BASE_URL}/posts?${query}`, {
@@ -365,6 +388,7 @@ export const api = {
     create: async (data: PostPayload): Promise<Post> => {
       const res = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
+        signal: AbortSignal.timeout(15000),
         headers: getHeaders(),
         body: JSON.stringify(data),
       });
@@ -380,12 +404,14 @@ export const api = {
       const responseData = await handleResponse(res);
       return normalizePost(responseData);
     },
-    publish: async (id: number): Promise<void> => {
-      const res = await fetch(`${BASE_URL}/posts/${id}/publish`, {
-        method: 'POST',
-        headers: getHeaders(),
-      });
-      return handleResponse(res);
+    getDraft: async (id: number): Promise<PostDraft> => normalizeDraft(await handleResponse(await fetch(`${BASE_URL}/posts/${id}/draft`, { headers: getHeaders(), signal: AbortSignal.timeout(15000) }))),
+    saveDraft: async (id: number, data: DraftContent, version: number): Promise<PostDraft> => normalizeDraft(await handleResponse(await fetch(`${BASE_URL}/posts/${id}/draft`, {
+      method: 'PUT', headers: getHeaders(), signal: AbortSignal.timeout(15000), body: JSON.stringify({ ...data, version }),
+    }))),
+    discardDraft: async (id: number, version: number): Promise<PostDraft> => normalizeDraft(await handleResponse(await fetch(`${BASE_URL}/posts/${id}/draft?version=${version}`, { method: 'DELETE', headers: getHeaders(), signal: AbortSignal.timeout(15000) }))),
+    publish: async (id: number, version: number): Promise<PostDraft> => {
+      const data = await handleResponse(await fetch(`${BASE_URL}/posts/${id}/publish`, { method: 'POST', headers: getHeaders(), signal: AbortSignal.timeout(15000), body: JSON.stringify({ version }) }));
+      return data ? normalizeDraft(data) : api.posts.getDraft(id);
     },
     delete: async (id: number): Promise<void> => {
       const res = await fetch(`${BASE_URL}/posts/${id}`, {

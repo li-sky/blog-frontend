@@ -1,7 +1,7 @@
 import { resourceCardPlugins, insertResourceCard } from './resourceCardPlugin';
 import { commandsCtx } from '@milkdown/core';
-import { clearTextInCurrentBlockCommand } from '@milkdown/preset-commonmark';
-import React, { useEffect, useRef, useState } from 'react';
+import { clearTextInCurrentBlockCommand, toggleStrongCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
 import { TextSelection } from '@milkdown/prose/state';
@@ -15,17 +15,53 @@ import './crepe-theme.css';
 interface CrepeEditorProps {
   value: string;
   onChange: (markdown: string) => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
-export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => {
+export interface CrepeEditorHandle { getMarkdown: () => string; focus: () => void; }
+export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ value, onChange, onBusyChange }, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const crepeRef = useRef<Crepe | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const busyRef = useRef(false);
+  const readyRef = useRef(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const changeRef = useRef(onChange); changeRef.current = onChange;
+  const lastMarkdownRef = useRef(value);
+  const initialSourceRef = useRef(value);
+  const initialCanonicalRef = useRef<string | null>(null);
+  const sourceOutput = (markdown: string) => markdown === initialCanonicalRef.current ? initialSourceRef.current : markdown;
+  const [moreOpen,setMoreOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  useEffect(() => { onBusyChange?.(isUploading); return () => onBusyChange?.(false); }, [isUploading,onBusyChange]);
+  useImperativeHandle(ref, () => ({ getMarkdown: () => readyRef.current && crepeRef.current ? sourceOutput(crepeRef.current.getMarkdown()) : lastMarkdownRef.current, focus: () => readyRef.current && crepeRef.current?.editor.action(ctx => ctx.get(editorViewCtx).focus()) }), []);
+  const emit = (raw: string) => { const markdown = sourceOutput(raw); if (markdown !== lastMarkdownRef.current) { lastMarkdownRef.current = markdown; changeRef.current(markdown); } };
+  const uploadPictures = async (files: File[]) => {
+    const editor = crepeRef.current?.editor; if (!editor || busyRef.current || !files.length) return;
+    busyRef.current = true; setIsUploading(true); setUploadProgress(0);
+    try {
+      for (let index=0; index<files.length; index++) {
+        const result=await uploadImage(files[index],files[index].name);
+        if (crepeRef.current?.editor !== editor) return;
+        editor.action(insert(`![${escapeMarkdownAlt(files[index].name)}](${result.url})`));
+        setUploadProgress(Math.round((index+1)/files.length*100));
+      }
+    } catch(error) { window.alert(error instanceof Error ? error.message : '图片上传失败'); }
+    finally { busyRef.current=false; setIsUploading(false); }
+  };
+  const runMobile = (kind: 'link'|'bold'|'heading'|'list') => {
+    crepeRef.current?.editor.action(ctx => {
+      const commands=ctx.get(commandsCtx);
+      if (kind==='link') insertResourceCard(ctx,{kind:'link'});
+      if (kind==='bold') commands.call(toggleStrongCommand.key);
+      if (kind==='heading') commands.call(wrapInHeadingCommand.key,2);
+      if (kind==='list') commands.call(wrapInBulletListCommand.key);
+      ctx.get(editorViewCtx).focus();
+    }); setMoreOpen(false);
+  };
   const escapeMarkdownAlt = (text: string) => text.replace(/[\[\]()]/g, '\\$&');
 
   const uploadImage = async (file: File, alt?: string) => {
@@ -42,6 +78,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
     try {
       for (let index = 0; index < files.length; index++) {
         const file = await api.files.upload(files[index]);
+        if (crepeRef.current?.editor !== editor) return;
         editor.action(ctx => insertResourceCard(ctx, { kind: 'file', name: file.name, url: file.url, size: file.size }));
         setUploadProgress(Math.round(((index + 1) / files.length) * 100));
       }
@@ -52,6 +89,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
 
   useEffect(() => {
     if (!containerRef.current) return;
+    let disposed=false;
 
     const crepe = new Crepe({
       root: containerRef.current,
@@ -81,8 +119,9 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
         },
         [Crepe.Feature.ImageBlock]: {
           onUpload: async (file: File) => {
-            const image = await uploadImage(file);
-            return image.url;
+            busyRef.current=true; setIsUploading(true);
+            try { return (await uploadImage(file)).url; }
+            finally { busyRef.current=false; setIsUploading(false); }
           },
         },
       },
@@ -93,13 +132,17 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
 
     crepe.on((listener) =>
       listener.markdownUpdated((_, markdown) => {
-        onChange(markdown);
+        emit(markdown);
       })
     );
 
     crepe
       .create()
       .then(() => {
+        if (disposed) return;
+        readyRef.current=true;
+        initialCanonicalRef.current=crepe.getMarkdown();
+        lastMarkdownRef.current=initialSourceRef.current;
         setIsReady(true);
       })
       .catch((err) => {
@@ -154,6 +197,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
           markdownChunks.push(`![${alt}](${image.url})`);
         }
 
+        if (crepeRef.current?.editor !== editor) return;
         editor.action(insert(markdownChunks.join('\n\n')));
       } catch (error) {
         console.error('Image encoding or upload failed', error);
@@ -171,6 +215,8 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
     return () => {
       container?.removeEventListener('dragover', handleDragOver);
       container?.removeEventListener('drop', handleDrop, true);
+      disposed=true; readyRef.current=false;
+      crepeRef.current=null;
       crepe.destroy();
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
@@ -179,11 +225,19 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
   }, []); // Empty dependency array: only run on mount
 
   return (
-    <div className="relative min-h-[500px]" onBlur={() => {
+    <div className="crepe-editor-wrap relative min-h-[320px]" onBlur={() => {
       // Flush serialized content before a nearby Save button can use stale listener state.
-      if (isReady && crepeRef.current) onChange(crepeRef.current.getMarkdown());
+      if (isReady && crepeRef.current) emit(crepeRef.current.getMarkdown());
     }}>
       <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
+      <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={event=>{const files=Array.from(event.target.files || []);event.target.value='';void uploadPictures(files);}} />
+      <div className="crepe-mobile-tools" role="toolbar" aria-label="正文插入工具" onMouseDown={event=>event.preventDefault()}>
+        <button type="button" disabled={!isReady || isUploading} onClick={()=>imageInputRef.current?.click()}>图片</button>
+        <button type="button" disabled={!isReady || isUploading} onClick={()=>fileInputRef.current?.click()}>附件</button>
+        <button type="button" disabled={!isReady || isUploading} onClick={()=>runMobile('link')}>链接卡片</button>
+        <button type="button" aria-expanded={moreOpen} disabled={!isReady || isUploading} onClick={()=>setMoreOpen(open=>!open)}>更多</button>
+        {moreOpen && <div className="crepe-mobile-more"><button type="button" onClick={()=>runMobile('bold')}>粗体</button><button type="button" onClick={()=>runMobile('heading')}>二级标题</button><button type="button" onClick={()=>runMobile('list')}>列表</button></div>}
+      </div>
       {!isReady && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/70 text-sm text-indigo-500">
           Initializing editor…
@@ -206,4 +260,4 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
       <div ref={containerRef} className="crepe-editor" data-ready={isReady} />
     </div>
   );
-};
+});

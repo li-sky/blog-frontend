@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Post } from '../types';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { PublicationTimes } from './PublicationTimes';
 import { getStaticVariantUrl } from '../services/imageVariants';
 
 interface PostCardProps {
@@ -53,11 +53,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       )}
       
       <div className="p-6">
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
-            <span className="flex items-center">
-              <Calendar className="w-3 h-3 mr-1" />
-              {new Date(post.createdAt).toLocaleDateString()}
-            </span>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <PublicationTimes post={post} compact />
             {post.status === 'draft' && (
               <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs px-2 py-0.5 rounded-full">
                 草稿

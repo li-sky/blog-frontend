@@ -52,6 +52,12 @@ export interface Post {
   status: PostStatus;
   createdAt: string;
   updatedAt: string;
+  publicationTimeKnown?: boolean;
+  publishedAt?: string | null;
+  publishedUpdatedAt?: string | null;
+  draftUpdatedAt?: string | null;
+  draftVersion?: number;
+  hasUnpublishedChanges?: boolean;
   slug?: string;
   userId?: number;
   user?: {
@@ -84,6 +90,24 @@ export interface PostPayload {
   summary?: string;
   body: string; // Field name expected by backend when creating/updating
   status: PostStatus;
+  clientRequestId?: string;
+}
+
+export interface DraftContent {
+  title: string;
+  summary: string;
+  body: string;
+}
+
+export interface PostDraft extends DraftContent {
+  postId: number;
+  version: number;
+  updatedAt: string | null;
+  status: PostStatus;
+  publicationTimeKnown?: boolean;
+  publishedAt: string | null;
+  publishedUpdatedAt: string | null;
+  hasUnpublishedChanges: boolean;
 }
 
 export interface Comment {

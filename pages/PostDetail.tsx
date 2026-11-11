@@ -1,8 +1,9 @@
+import { PublicationTimes } from '../components/PublicationTimes';
 import { ResourceLink } from '../components/ResourceLink';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { Calendar, Loader2, MessageSquare, Trash2, Send, PenBoxIcon } from 'lucide-react';
+import { Loader2, MessageSquare, Trash2, Send } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { MarkdownTable } from '../components/MarkdownTable';
 import { PostImageViewer } from '../components/PostImageViewer';
@@ -254,13 +255,8 @@ export const PostDetail: React.FC = () => {
   return (
     <article className="max-w-3xl mx-auto">
       <header className="mb-10">
-        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-          <span className="flex items-center">
-            <Calendar className="w-4 h-4 mr-2" />
-            {new Date(post.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-            <PenBoxIcon className="w-4 h-4 ml-4 mr-2" />
-            {new Date(post.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-          </span>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <PublicationTimes post={post} />
           {post.status === 'draft' && (
             <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded text-xs font-medium">Draft</span>
           )}

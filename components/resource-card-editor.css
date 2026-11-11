@@ -28,3 +28,7 @@
 .milkdown .ProseMirror .editor-resource-card { display:flow-root; }
 .milkdown .ProseMirror .editor-resource-card > .resource-card { margin:0 auto; }
 .milkdown .ProseMirror .editor-resource-card.is-card-transitioning { overflow:hidden; border-radius:12px; }
+@media (max-width:640px) {
+  .milkdown .ProseMirror .editor-resource-card-delete { width:44px; height:44px; top:-20px; right:-20px; line-height:44px; border:0; background:transparent; isolation:isolate; }
+  .milkdown .ProseMirror .editor-resource-card-delete::before { content:""; position:absolute; inset:10px; border:1px solid #cbd5e1; border-radius:50%; background:var(--crepe-color-background,white); z-index:-1; }
+}

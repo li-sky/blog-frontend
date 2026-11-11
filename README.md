@@ -76,3 +76,7 @@ Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test compo
 普通点击右下角按钮切换明暗；手机长按约550ms、桌面右键或键盘Shift+F10打开配色弹窗。长按时淡环从顶部逆时针填满，提前松开、滑动或取消会停止；长按完成后的合成点击不会再次切换明暗。弹窗支持Esc、点击外侧及关闭按钮。
 
 全站界面、文章代码高亮、Milkdown/CodeMirror和资源卡片共用配色变量；切换不会重建编辑文档或清空撤销历史。色板来自[VS Code](https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults)、[GitHub Primer](https://github.com/primer/primitives)、[Dracula / Alucard](https://draculatheme.com/spec)、[Nord](https://www.nordtheme.com/docs/colors-and-palettes/)、[Gruvbox](https://github.com/morhetz/gruvbox)、[Catppuccin](https://catppuccin.com/palette/)、[Solarized](https://ethanschoonover.com/solarized/)及[Monokai](https://github.com/microsoft/vscode/tree/main/extensions/theme-monokai)，按网页对比度适配；Midnight为本站午夜蓝方案。
+
+手机配色弹窗提供“摇一摇换配色”开关，默认关闭。启用时按浏览器要求申请运动权限；连续往返晃动会随机选择另一套配色，保留明暗模式，并短暂提示新配色。设置仅保存在当前浏览器；要求交互授权的浏览器在重新打开页面后需再次点击启用。
+
+运动检测优先使用去重力加速度，缺失时过滤含重力读数；需要三次强度足够的反向脉冲，触发后冷却2.2秒。转屏暂停检测，页面进入后台或关闭开关会重置检测，停用时移除监听。运动数据不上传。回归覆盖运动过滤、冷却、权限拒绝和随机去重；浏览器使用模拟传感器验证，实际手感仍需手机确认。API依据[W3C Device Orientation and Motion](https://w3c.github.io/deviceorientation/)。

@@ -1,0 +1,10 @@
+a.resource-card { display:flex; align-items:center; gap:16px; width:100%; box-sizing:border-box; margin:12px 0; padding:18px 20px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; color:#334155; text-decoration:none; transition:background .15s,border-color .15s; }
+a.resource-card:hover { background:#eef2ff; border-color:#a5b4fc; }
+.resource-card-icon { display:flex; padding:12px; border-radius:12px; background:#e0e7ff; color:#4f46e5; flex-shrink:0; }
+.resource-card-body { display:flex; flex-direction:column; gap:5px; min-width:0; flex:1; }
+.resource-card-body strong { font-size:15px; overflow-wrap:anywhere; }
+.resource-card-body small { font-size:12px; color:#64748b; overflow-wrap:anywhere; }
+.resource-card-action { color:#6366f1; flex-shrink:0; }
+.dark a.resource-card { background:#1e293b; border-color:#334155; color:#e2e8f0; }
+.dark a.resource-card:hover { background:#28344d; border-color:#818cf8; }
+.dark .resource-card-body small { color:#94a3b8; }

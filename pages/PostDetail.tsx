@@ -1,3 +1,4 @@
+import { ResourceLink } from '../components/ResourceLink';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
@@ -159,6 +160,7 @@ export const PostDetail: React.FC = () => {
         components: {
           img: CustomImage,
           table: MarkdownTable,
+          a: ResourceLink,
         }
       } as any)
       .process(post.content)

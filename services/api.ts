@@ -145,6 +145,20 @@ const normalizeImageList = (data: any): ImageListResponse => ({
 });
 
 export const api = {
+  files: {
+    upload: async (file: File): Promise<{ name: string; size: number; url: string }> => {
+      if (file.size > 100 * 1024 * 1024) throw new Error('文件不能超过 100 MB');
+      const body = new FormData();
+      body.append('file', file);
+      const token = localStorage.getItem('token');
+      const result = await handleResponse(await fetch(`${BASE_URL}/files/upload`, {
+        method: 'POST', body, headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }));
+      // Resolve relative download URLs against the configured API host.
+      result.url = new URL(result.url, new URL(BASE_URL, window.location.origin)).href;
+      return result;
+    },
+  },
   auth: {
     login: async (credentials: LoginRequest): Promise<AuthResponse> => {
       const res = await fetch(`${BASE_URL}/auth/login`, {

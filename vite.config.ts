@@ -79,6 +79,8 @@ export default defineConfig({
   },
 
   resolve: {
+    // ProseMirror nodes must share the same model/state constructors.
+    dedupe: ["prosemirror-model", "prosemirror-state", "prosemirror-view", "prosemirror-transform"],
     alias: {
       "@": path.resolve(__dirname, "."),
     },

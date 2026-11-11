@@ -1,4 +1,6 @@
-import { markdownLink } from './ResourceLink';
+import { resourceCardPlugins, insertResourceCard } from './resourceCardPlugin';
+import { commandsCtx } from '@milkdown/core';
+import { clearTextInCurrentBlockCommand } from '@milkdown/preset-commonmark';
 import React, { useEffect, useRef, useState } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
@@ -40,23 +42,12 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
     try {
       for (let index = 0; index < files.length; index++) {
         const file = await api.files.upload(files[index]);
-        editor.action(insert('\n\n' + markdownLink(file.name, file.url, `attachment:${file.size}`) + '\n\n'));
+        editor.action(ctx => insertResourceCard(ctx, { kind: 'file', name: file.name, url: file.url, size: file.size }));
         setUploadProgress(Math.round(((index + 1) / files.length) * 100));
       }
     } catch (error) {
       window.alert(error instanceof Error ? error.message : '文件上传失败');
     } finally { busyRef.current = false; setIsUploading(false); }
-  };
-
-  const insertLinkCard = () => {
-    const url = window.prompt('链接地址（http 或 https）');
-    if (!url) return;
-    let parsed: URL;
-    try { parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error(); }
-    catch { window.alert('请输入有效的 http/https 地址'); return; }
-    const name = window.prompt('卡片标题', parsed.hostname);
-    if (name === null) return;
-    crepeRef.current?.editor.action(insert('\n\n' + markdownLink(name || parsed.hostname, parsed.href, 'link-card') + '\n\n'));
   };
 
   useEffect(() => {
@@ -66,6 +57,30 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
       root: containerRef.current,
       defaultValue: value || '',
       featureConfigs: {
+        [Crepe.Feature.BlockEdit]: {
+          buildMenu: (builder) => {
+            const resources = builder.addGroup('resources', '文件与链接');
+            resources.addItem('attachment', {
+              label: '上传附件 / Upload file',
+              icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m-4 4 4-4 4 4M4 15v5h16v-5"/></svg>',
+              onRun: (ctx) => {
+                if (busyRef.current) return;
+                ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key);
+                fileInputRef.current?.click();
+              },
+            });
+            resources.addItem('link-card', {
+              label: '链接卡片 / Link card',
+              icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h10M7 14h6"/></svg>',
+              onRun: (ctx) => {
+                ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key);
+                insertResourceCard(ctx, { kind: 'link' });
+                // The menu restores focus when closing; focus the inline form after it closes.
+                setTimeout(() => containerRef.current?.querySelector<HTMLInputElement>('.editor-resource-card-form input')?.focus(), 0);
+              },
+            });
+          },
+        },
         [Crepe.Feature.ImageBlock]: {
           onUpload: async (file: File) => {
             const image = await uploadImage(file);
@@ -75,6 +90,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
       },
     });
 
+    crepe.editor.use(resourceCardPlugins);
     crepeRef.current = crepe;
 
     crepe.on((listener) =>
@@ -166,12 +182,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
 
   return (
     <div className="relative min-h-[500px]">
-      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3 mb-3 text-sm dark:border-slate-700">
-        <button type="button" disabled={!isReady || isUploading} onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-3 py-2 disabled:opacity-50">上传附件</button>
-        <button type="button" disabled={!isReady || isUploading} onClick={insertLinkCard} className="rounded-lg border px-3 py-2 disabled:opacity-50">插入链接卡片</button>
-        <span className="text-xs text-slate-500">支持拖入文件 · 单个附件最大 100 MB</span>
-        <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
-      </div>
+      <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
       {!isReady && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/70 text-sm text-indigo-500">
           Initializing editor…

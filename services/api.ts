@@ -145,6 +145,10 @@ const normalizeImageList = (data: any): ImageListResponse => ({
 });
 
 export const api = {
+  links: {
+    metadata: async (url: string, signal?: AbortSignal): Promise<{ url: string; title: string; icon: string }> =>
+      handleResponse(await fetch(`${BASE_URL}/links/metadata?${new URLSearchParams({ url })}`, { headers: getHeaders(), signal })),
+  },
   files: {
     upload: async (file: File): Promise<{ name: string; size: number; url: string }> => {
       if (file.size > 100 * 1024 * 1024) throw new Error('文件不能超过 100 MB');

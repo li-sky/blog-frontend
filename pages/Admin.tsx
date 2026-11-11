@@ -12,7 +12,9 @@ const EMPTY: DraftContent = { title: '', summary: '', body: '' };
 const cacheKey = (id: number | null) => `admin_post_cache_${id ?? 'new'}`;
 const readCache = (id: number | null): any => { try { return JSON.parse(localStorage.getItem(cacheKey(id)) || 'null'); } catch { return null; } };
 const requestId = () => crypto.randomUUID?.() || `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-const errorMessage = (error: unknown) => (error as { status?: number })?.status === 409
+const errorMessage = (error: unknown) => (error as APIError)?.data?.error === 'refresh_required'
+  ? '编辑器版本已更新，本地内容已保留。请先备份当前内容，再重新打开管理页恢复草稿。'
+  : (error as { status?: number })?.status === 409
   ? '服务器已有更新的草稿。本地内容已保留，请载入服务器草稿后再编辑。'
   : '草稿保存失败，内容已保留在本机；将重试，也可以点击立即保存。';
 
@@ -72,10 +74,12 @@ export const Admin: React.FC = () => {
       if (state.error) setMessage(errorMessage(state.error));
     });
     sessionRef.current = coordinator; setDoc(initial); setSaveState(coordinator.state); setMessage('');
-    if (cache && !sameContent({ title: cache.title || '', summary: cache.summary || '', body: cache.content || '' }, initial) && window.confirm('发现尚未同步的本地草稿，是否恢复？')) {
+    if (cache && !sameContent({ title: cache.title || '', summary: cache.summary || '', body: cache.content || '' }, initial) && window.confirm(cache.version == null ? '发现旧版编辑器保留的本地草稿，是否恢复？恢复只修改草稿，不会直接更新线上文章。' : '发现尚未同步的本地草稿，是否恢复？')) {
+      // Preserve the source before converting a legacy cache to a versioned draft.
+      try { localStorage.setItem(`admin_post_backup_${draft?.postId ?? 'new'}_${Date.now()}`, JSON.stringify(cache)); } catch {}
       const local = { title: cache.title || '', summary: cache.summary || '', body: cache.content || '' };
       coordinator.update(local); setDoc(local);
-      if (draft && Number(cache.version) !== draft.version) coordinator.blockForConflict(new APIError('draft_conflict', 409));
+      if (draft && cache.version != null && Number(cache.version) !== draft.version) coordinator.blockForConflict(new APIError('draft_conflict', 409));
     }
     setEditorSeed(seed => seed + 1); setView('editor');
   };

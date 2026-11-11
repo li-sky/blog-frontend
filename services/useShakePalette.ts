@@ -63,5 +63,5 @@ export function useShakePalette(onShake: () => void) {
     return () => { window.clearTimeout(timeout); window.removeEventListener('devicemotion', motion); window.removeEventListener('orientationchange', rotate); screen.orientation?.removeEventListener('change', rotate); document.removeEventListener('visibilitychange', visibility); };
   }, [enabled]);
 
-  return { enabled, supported, pending, message, toggle };
+  return { enabled, supported, pending, message, needsPermission: supported && optedIn && !authorized, toggle };
 }

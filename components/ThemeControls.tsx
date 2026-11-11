@@ -60,7 +60,7 @@ export function ThemeControls() {
       <section className="palette-panel">
         <header><div><h2 id="palette-heading">配色</h2><p>选择喜欢的编辑器色调</p></div><button type="button" className="palette-close" aria-label="关闭配色设置" onClick={() => setOpen(false)}><X size={20} /></button></header>
         <div className="palette-modes" role="group" aria-label="明暗模式">{modes.map(mode => <button key={mode.value} type="button" aria-pressed={appearance.mode === mode.value} onClick={() => setAppearance(current => ({ ...current, mode: mode.value }))}>{mode.icon}{mode.name}</button>)}</div>
-        <div className="palette-shake"><div><strong><Smartphone size={16} />摇一摇换配色</strong><p role="status">{shake.message || shakeToast || (shake.supported ? '晃动手机，随机换一种配色' : '请在支持运动感应的手机上启用')}</p></div><button type="button" role="switch" aria-label="摇一摇换配色" aria-checked={shake.enabled} disabled={!shake.supported || shake.pending} onClick={() => void shake.toggle()}>{shake.pending ? '授权中…' : shake.enabled ? '已开启' : '启用'}</button></div>
+        <div className="palette-shake"><div><strong><Smartphone size={16} />摇一摇换配色</strong><p role="status">{shake.message || shakeToast || (shake.needsPermission ? '允许运动权限后，即可摇动换配色' : shake.supported ? '晃动手机，随机换一种配色' : '请在支持运动感应的手机上启用')}</p></div><button type="button" role="switch" aria-label="摇一摇换配色" aria-checked={shake.enabled} disabled={!shake.supported || shake.pending} onClick={() => void shake.toggle()}>{shake.pending ? '授权中…' : shake.enabled ? '已开启' : shake.needsPermission ? '授权启用' : '启用'}</button></div>
         <div className="palette-grid" role="radiogroup" aria-label="编辑器配色">{palettes.map(palette => {
           const colors = dark ? palette.dark : palette.light;
           return <label className="palette-option" key={palette.id}>

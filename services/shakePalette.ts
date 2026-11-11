@@ -65,5 +65,5 @@ export function requestMotionAccess(source: MotionPermissionSource): Promise<'gr
   return source.requestPermission ? source.requestPermission.call(source) : Promise.resolve('granted');
 }
 export function readShakePreference(storage: Pick<Storage, 'getItem'>): boolean {
-  try { return storage.getItem('shake-palette') === 'on'; } catch { return false; }
+  try { return storage.getItem('shake-palette') !== 'off'; } catch { return true; }
 }

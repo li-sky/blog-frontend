@@ -61,5 +61,5 @@ test('permission requests preserve their receiver and never turn denial into a g
   expect(await requestMotionAccess({requestPermission:()=>Promise.resolve('granted')})).toBe('granted');
   expect(await requestMotionAccess({})).toBe('granted');
   await expect(requestMotionAccess({requestPermission:()=>Promise.reject(Error('blocked'))})).rejects.toThrow('blocked');
-  expect(readShakePreference({getItem:()=>null})).toBe(false);expect(readShakePreference({getItem:()=> 'on'})).toBe(true);expect(readShakePreference({getItem:()=> 'off'})).toBe(false);expect(readShakePreference({getItem:()=>{throw Error('blocked')}})).toBe(false);
+  expect(readShakePreference({getItem:()=>null})).toBe(true);expect(readShakePreference({getItem:()=> 'on'})).toBe(true);expect(readShakePreference({getItem:()=> 'off'})).toBe(false);expect(readShakePreference({getItem:()=>{throw Error('blocked')}})).toBe(true);
 });

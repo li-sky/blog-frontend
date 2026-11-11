@@ -53,137 +53,143 @@ const resourceCardNearby = $prose(() => new Plugin({
 
 const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, getPos) => {
   let node = initialNode;
-  let editing = !node.attrs.url;
   let destroyed = false;
-  let disposeForm = () => {};
-  const dom = document.createElement('div');
-  dom.className = 'editor-resource-card';
-  dom.contentEditable = 'false';
+  let titleManual = false;
+  let iconManual = false;
+  let generation = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+  let advancedOpen = false;
+  const isFile = node.attrs.kind === 'file';
+  const dom = document.createElement('div'); dom.className = 'editor-resource-card'; dom.contentEditable = 'false'; dom.dataset.resourceCard = node.attrs.kind;
+  const button = (text: string, action: () => void) => {
+    const el = document.createElement('button'); el.type = 'button'; el.textContent = text; el.addEventListener('click', action); return el;
+  };
   const update = (attrs: Partial<CardAttrs>) => {
     const pos = getPos();
-    if (destroyed || pos === undefined) return;
+    if (destroyed || pos === undefined || Object.entries(attrs).every(([key,value]) => node.attrs[key] === value)) return;
     view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs }));
   };
-  const remove = () => {
-    const pos = getPos();
-    if (pos === undefined) return;
-    view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize));
-    view.focus();
+  const cancelMetadata = () => { generation++; clearTimeout(timer); controller?.abort(); };
+  const toolbar = document.createElement('div'); toolbar.className = 'editor-resource-card-toolbar'; toolbar.setAttribute('aria-label',isFile ? '附件操作' : '链接卡片操作');
+  const preview = document.createElement('div'); preview.className = 'resource-card editor-resource-card-preview'; preview.dataset.kind = node.attrs.kind;
+  const artwork = document.createElement('a'); artwork.className = 'resource-card-artwork editor-resource-card-open';
+  artwork.setAttribute('aria-label', isFile ? '下载附件' : '在新窗口打开链接'); artwork.rel = 'noopener noreferrer';
+  if (isFile) artwork.download = ''; else artwork.target = '_blank';
+  const primary = document.createElement('span'); primary.className = 'resource-card-artwork-primary'; primary.setAttribute('aria-hidden','true');
+  const action = document.createElement('span'); action.className = 'resource-card-artwork-action'; action.setAttribute('aria-hidden','true'); action.innerHTML = isFile ? downloadIconMarkup : externalLinkIconMarkup;
+  artwork.append(primary,action);
+  const body = document.createElement('span'); body.className = 'resource-card-body';
+  const makeField = (className: string,label: string,placeholder: string) => {
+    const field = document.createElement('textarea'); field.className = className; field.rows = 1; field.setAttribute('aria-label',label); field.placeholder = placeholder; field.spellcheck = false; return field;
   };
-  const button = (text: string, action: () => void) => {
-    const el = document.createElement('button'); el.type = 'button'; el.textContent = text;
-    el.addEventListener('click', action); return el;
+  const name = makeField('editor-resource-card-title',isFile ? '文件名（显示名称）' : '卡片标题',isFile ? '文件名' : '链接标题');
+  const url = makeField('editor-resource-card-url','链接地址','https://example.com');
+  const size = document.createElement('small'); size.className = 'sr-only';
+  body.append(name,isFile ? size : url); preview.append(artwork,body);
+  const status = document.createElement('span'); status.className = 'editor-resource-card-status'; status.setAttribute('aria-live','polite');
+  const error = document.createElement('span'); error.className = 'editor-resource-card-error'; error.setAttribute('role','alert');
+  const advanced = document.createElement('div'); advanced.className = 'editor-resource-card-form'; advanced.hidden = true;
+  const iconLabel = document.createElement('label'); iconLabel.textContent = '网站图标';
+  const icon = document.createElement('input'); icon.type = 'url'; icon.placeholder = '图标 URL（可选）'; iconLabel.append(icon);
+  if (!isFile) toolbar.append(button('高级设置', () => { advancedOpen = !advancedOpen; advanced.hidden = !advancedOpen; if (advancedOpen) icon.focus(); }));
+  toolbar.append(button('删除', () => {
+    const pos = getPos(); if (pos === undefined) return; cancelMetadata(); view.dispatch(view.state.tr.delete(pos,pos + node.nodeSize)); view.focus();
+  }));
+  dom.append(toolbar,preview,status,error); if (!isFile) dom.append(advanced);
+  const resize = (field: HTMLTextAreaElement) => { field.style.height = 'auto'; field.style.height = `${Math.max(field.scrollHeight, isFile || field === name ? 24 : 18)}px`; };
+  const normalizeURL = (value: string) => {
+    try { const parsed = new URL(value.trim()); return ['http:','https:'].includes(parsed.protocol) ? parsed : null; } catch { return null; }
   };
-  const render = () => {
-    disposeForm();
+  let artworkKey = '';
+  const syncArtwork = () => {
     const attrs = node.attrs as CardAttrs;
-    const isFile = attrs.kind === 'file';
-    dom.dataset.resourceCard = attrs.kind;
-    dom.classList.toggle('is-editing', editing);
-    dom.replaceChildren();
-    const actions = document.createElement('div'); actions.className = 'editor-resource-card-toolbar';
-    actions.setAttribute('aria-label', isFile ? '附件编辑操作' : '链接卡片编辑操作');
-    if (!editing) actions.append(button('编辑', () => { editing = true; render(); dom.querySelector('input')?.focus(); }));
-    actions.append(button('删除', remove)); dom.append(actions);
-
-    const link = document.createElement('a'); link.className = 'resource-card editor-resource-card-preview'; link.dataset.kind = attrs.kind;
-    if (isSafeCardUrl(attrs.url)) link.href = attrs.url;
-    link.target = '_blank'; link.rel = 'noopener noreferrer';
-    if (isFile) { link.download = ''; link.removeAttribute('target'); }
-    const artwork = document.createElement('span'); artwork.className = 'resource-card-artwork'; artwork.setAttribute('aria-hidden','true');
-    const primary = document.createElement('span'); primary.className = 'resource-card-artwork-primary';
-    // SVG comes only from static application artwork, never metadata or user input.
-    const symbol = document.createElement('span'); symbol.className = 'resource-card-symbol';
-    symbol.innerHTML = isFile ? fileIconMarkup(attrs.name) : linkIconMarkup; primary.append(symbol);
+    const key = JSON.stringify([attrs.kind,attrs.url,attrs.icon,isFile ? attrs.name : '']);
+    if (artworkKey === key) return; artworkKey = key;
+    if (isSafeCardUrl(attrs.url)) artwork.href = attrs.url; else artwork.removeAttribute('href');
+    primary.replaceChildren();
+    const symbol = document.createElement('span'); symbol.className = 'resource-card-symbol'; symbol.innerHTML = isFile ? fileIconMarkup(attrs.name) : linkIconMarkup; primary.append(symbol);
     const favicon = isFile ? '' : faviconForLink(attrs.url);
     const metadataIcon = /^https?:\/\//i.test(attrs.icon || '') ? attrs.icon! : '';
-    const initialIcon = metadataIcon || favicon;
-    if (!isFile && initialIcon) {
-      const image = document.createElement('img'); image.className = 'resource-card-site-icon'; image.src = initialIcon; image.alt = ''; image.referrerPolicy = 'no-referrer';
-      let triedFavicon = initialIcon === favicon;
-      image.addEventListener('error', () => {
-        if (!triedFavicon && favicon) { triedFavicon = true; image.src = favicon; }
-        else image.remove();
-      }); primary.append(image);
-    }
-    const action = document.createElement('span'); action.className = 'resource-card-artwork-action'; action.innerHTML = isFile ? downloadIconMarkup : externalLinkIconMarkup;
-    artwork.append(primary, action);
-    const body = document.createElement('span'); body.className = 'resource-card-body';
-    const title = document.createElement('strong'); title.textContent = attrs.name || (isFile ? '附件' : '填写链接信息');
-    const subtitle = document.createElement('small'); if (isFile) subtitle.className = 'sr-only'; subtitle.textContent = isFile ? formatFileSize(attrs.size) : attrs.url;
-    body.append(title, subtitle); link.append(artwork, body); dom.append(link);
-
-    if (editing) {
-      let closed = false;
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      let controller: AbortController | undefined;
-      let generation = 0;
-      let titleDirty = false;
-      let iconDirty = false;
-      disposeForm = () => { closed = true; generation++; clearTimeout(timer); controller?.abort(); };
-      const form = document.createElement('form'); form.className = 'editor-resource-card-form';
-      const nameLabel = document.createElement('label'); nameLabel.textContent = isFile ? '文件名（显示名称）' : '卡片标题';
-      const name = document.createElement('input'); name.type = 'text'; name.placeholder = isFile ? '文件名' : '自动读取网站标题，也可手动填写'; name.value = attrs.name; name.required = isFile;
-      name.addEventListener('input', () => { titleDirty = true; }); nameLabel.append(name);
-      const urlLabel = document.createElement('label'); urlLabel.textContent = isFile ? '下载地址' : '链接地址';
-      const url = document.createElement('input'); url.type = isFile ? 'text' : 'url'; url.placeholder = 'https://example.com'; url.value = attrs.url; url.required = true; url.readOnly = isFile; urlLabel.append(url);
-      const iconLabel = document.createElement('label'); iconLabel.textContent = '网站图标';
-      const icon = document.createElement('input'); icon.type = 'url'; icon.placeholder = '自动读取 favicon，也可手动填写图片 URL'; icon.value = attrs.icon || '';
-      icon.addEventListener('input', () => { iconDirty = true; }); iconLabel.append(icon);
-      const status = document.createElement('span'); status.className = 'editor-resource-card-status'; status.setAttribute('aria-live', 'polite');
-      const error = document.createElement('span'); error.className = 'editor-resource-card-error'; error.setAttribute('role', 'alert');
-      const readMetadata = async () => {
-        clearTimeout(timer); controller?.abort();
-        const current = url.value.trim();
-        let parsed: URL;
-        try { parsed = new URL(current); if (!['http:', 'https:'].includes(parsed.protocol)) return; } catch { return; }
-        const version = ++generation;
-        controller = new AbortController(); status.textContent = '正在读取网站信息…';
-        try {
-          const metadata = await api.links.metadata(parsed.href, controller.signal);
-          if (closed || version !== generation || current !== url.value.trim()) return;
-          if (!titleDirty) name.value = metadata.title;
-          if (!iconDirty) icon.value = metadata.icon;
-          status.textContent = '已读取网站信息，可继续修改';
-        } catch (failure) {
-          if (closed || version !== generation || controller.signal.aborted) return;
-          status.textContent = '无法读取网站信息，请手动填写标题或图标';
-        }
-      };
-      if (!isFile) {
-        url.addEventListener('input', () => { generation++; controller?.abort(); clearTimeout(timer); timer = setTimeout(() => void readMetadata(), 500); });
-        url.addEventListener('change', () => void readMetadata());
-        form.append(urlLabel, nameLabel, iconLabel, button('重新读取网站信息', () => void readMetadata()), status);
-      } else form.append(nameLabel, urlLabel);
-      const controls = document.createElement('div'); controls.className = 'editor-resource-card-actions';
-      const save = document.createElement('button'); save.type = 'submit'; save.textContent = '保存卡片';
-      const cancel = () => { if (!attrs.url) remove(); else { editing = false; render(); view.focus(); } };
-      controls.append(save, button('取消', cancel)); form.append(error, controls);
-      form.addEventListener('submit', event => {
-        event.preventDefault();
-        let parsed: URL | undefined;
-        if (!isFile) {
-          try { parsed = new URL(url.value.trim()); if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error(); }
-          catch { error.textContent = '请输入有效的 http/https 地址'; return; }
-          if (icon.value && !/^https?:\/\//i.test(icon.value.trim())) { error.textContent = '图标地址必须使用 http/https'; return; }
-        }
-        editing = false;
-        update({ name: name.value.trim() || parsed?.hostname || attrs.name, ...(isFile ? {} : { url: parsed!.href, icon: icon.value.trim() }) });
-        render(); view.focus();
-      });
-      form.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); cancel(); } });
-      dom.append(form);
+    const source = metadataIcon || favicon;
+    if (!isFile && source) {
+      const image = document.createElement('img'); image.className = 'resource-card-site-icon'; image.src = source; image.alt = ''; image.referrerPolicy = 'no-referrer';
+      let triedFavicon = source === favicon;
+      image.addEventListener('error', () => { if (!triedFavicon && favicon) { triedFavicon = true; image.src = favicon; } else image.remove(); }); primary.append(image);
     }
   };
-  render();
+  const sync = () => {
+    // Preserve the focused field and its DOM across transactions and IME composition.
+    if (document.activeElement !== name) name.value = node.attrs.name;
+    if (document.activeElement !== url) url.value = node.attrs.url;
+    if (document.activeElement !== icon) icon.value = node.attrs.icon || '';
+    size.textContent = formatFileSize(node.attrs.size); syncArtwork(); resize(name); if (!isFile) resize(url);
+  };
+  const readMetadata = async () => {
+    clearTimeout(timer); controller?.abort();
+    const current = url.value.trim(); const parsed = normalizeURL(current); if (!parsed || isFile) return;
+    const version = ++generation; const request = new AbortController(); controller = request; status.textContent = '正在读取网站信息…';
+    try {
+      const metadata = await api.links.metadata(parsed.href,request.signal);
+      if (destroyed || version !== generation || current !== url.value.trim()) return;
+      const attrs: Partial<CardAttrs> = {};
+      if (!titleManual && document.activeElement !== name) { attrs.name = metadata.title; name.value = metadata.title; resize(name); }
+      if (!iconManual && document.activeElement !== icon) { attrs.icon = metadata.icon; icon.value = metadata.icon; }
+      // URL may still be focused: commit only its validated value, without touching that DOM field.
+      attrs.url = parsed.href; update(attrs); status.textContent = '已读取网站信息';
+    } catch {
+      if (!destroyed && version === generation && !request.signal.aborted) status.textContent = '无法读取网站信息，可直接填写标题；图标将尝试 favicon';
+    }
+  };
+  advanced.append(iconLabel,button('重新读取网站信息', () => void readMetadata()));
+  name.value = node.attrs.name; url.value = node.attrs.url; icon.value = node.attrs.icon || '';
+  let composing = false;
+  name.addEventListener('compositionstart', () => { composing = true; }); name.addEventListener('compositionend', () => { composing = false; resize(name); });
+  url.addEventListener('compositionstart', () => { composing = true; }); url.addEventListener('compositionend', () => { composing = false; resize(url); });
+  name.addEventListener('input', () => { titleManual = true; resize(name); });
+  name.addEventListener('blur', () => { update({ name: name.value.trim() || node.attrs.name || (!isFile ? normalizeURL(url.value)?.hostname || '' : '') }); name.value = node.attrs.name; resize(name); });
+  url.addEventListener('input', () => {
+    resize(url); error.textContent = ''; cancelMetadata(); timer = setTimeout(() => void readMetadata(),500);
+  });
+  url.addEventListener('blur', () => {
+    const parsed = normalizeURL(url.value);
+    if (!parsed) { if (url.value.trim()) error.textContent = '请输入有效的 http/https 地址'; return; }
+    const changed = node.attrs.url !== parsed.href;
+    update({ url: parsed.href }); url.value = parsed.href; resize(url);
+    if (changed) void readMetadata();
+  });
+  icon.addEventListener('input', () => { iconManual = true; });
+  icon.addEventListener('blur', () => {
+    const value = icon.value.trim(); if (value && !normalizeURL(value)) { error.textContent = '图标地址必须使用 http/https'; return; }
+    update({ icon: value }); error.textContent = '';
+  });
+  const keyboard = (field: HTMLTextAreaElement | HTMLInputElement, key: 'name' | 'url' | 'icon') => field.addEventListener('keydown',event => {
+    if (event.isComposing || composing) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (key === 'url') { cancelMetadata(); status.textContent = ''; }
+      field.value = node.attrs[key] || ''; error.textContent = ''; if (field instanceof HTMLTextAreaElement) resize(field); field.blur(); view.focus();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (key === 'name' && !isFile) url.focus(); else { field.blur(); view.focus(); }
+    }
+  });
+  keyboard(name,'name'); keyboard(url,'url'); keyboard(icon,'icon');
+  preview.addEventListener('click',event => { if (event.target === preview || event.target === body) name.focus(); });
+  sync(); queueMicrotask(() => { if (!destroyed) sync(); });
   return {
     dom,
-    update(next: typeof initialNode) { if (next.type !== node.type) return false; const changed = JSON.stringify(next.attrs) !== JSON.stringify(node.attrs); node = next; if (changed) render(); return true; },
-    stopEvent(event: Event) { return !!(event.target as HTMLElement)?.closest('input, button, a, form'); },
+    update(next: typeof initialNode) {
+      if (next.type !== node.type) return false;
+      const previousURL = node.attrs.url; node = next;
+      if (previousURL !== node.attrs.url && document.activeElement !== url) cancelMetadata();
+      sync(); return true;
+    },
+    stopEvent(event: Event) { return !!(event.target as HTMLElement)?.closest('textarea,input,button,a,form'); },
     ignoreMutation: () => true,
     selectNode() { dom.classList.add('ProseMirror-selectednode'); },
     deselectNode() { dom.classList.remove('ProseMirror-selectednode'); },
-    destroy() { destroyed = true; disposeForm(); },
+    destroy() { destroyed = true; cancelMetadata(); },
   };
 });
 

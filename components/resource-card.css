@@ -1,11 +1,11 @@
-:is(a.resource-card, .milkdown .ProseMirror a.resource-card) {
+:is(.resource-card, .milkdown .ProseMirror .resource-card) {
   display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 2fr); width:100%; max-width:420px; box-sizing:border-box;
   min-height:96px; margin:12px auto; padding:0; gap:0; overflow:hidden;
   border:1px solid #e2e8f0; border-radius:14px; background:#fff; color:#334155;
   text-decoration:none; transition:background 150ms ease,border-color 150ms ease,box-shadow 150ms ease;
 }
-:is(a.resource-card, .milkdown .ProseMirror a.resource-card):hover, :is(a.resource-card, .milkdown .ProseMirror a.resource-card):focus-visible { background:#fafbff; border-color:#a5b4fc; box-shadow:0 4px 16px #4f46e50a; }
-:is(a.resource-card, .milkdown .ProseMirror a.resource-card):focus-visible { outline:2px solid #6366f1; outline-offset:3px; }
+:is(.resource-card, .milkdown .ProseMirror .resource-card):hover, :is(.resource-card, .milkdown .ProseMirror .resource-card):focus-visible { background:#fafbff; border-color:#a5b4fc; box-shadow:0 4px 16px #4f46e50a; }
+:is(.resource-card, .milkdown .ProseMirror .resource-card):focus-visible { outline:2px solid #6366f1; outline-offset:3px; }
 :is(.resource-card-artwork, .milkdown .ProseMirror .resource-card-artwork) {
   display:grid; place-items:center; position:relative; align-self:stretch; min-height:96px; overflow:hidden;
   background:#f1f4fc; border-right:1px solid #e2e8f0; color:#6366f1;
@@ -26,13 +26,13 @@
 :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) strong { display:block; font-size:1em; line-height:1.55; font-weight:600; overflow-wrap:anywhere; }
 :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) small { display:block; font-size:11px; line-height:1.6; color:#64748b; overflow-wrap:anywhere; }
 :is(.resource-card, .milkdown .ProseMirror .resource-card)[data-kind="file"] :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) { align-items:center; text-align:center; }
-.dark :is(a.resource-card, .milkdown .ProseMirror a.resource-card) { background:#182132; border-color:#334155; color:#e2e8f0; }
-.dark :is(a.resource-card, .milkdown .ProseMirror a.resource-card):hover, .dark :is(a.resource-card, .milkdown .ProseMirror a.resource-card):focus-visible { background:#202b40; border-color:#818cf8; }
+.dark :is(.resource-card, .milkdown .ProseMirror .resource-card) { background:#182132; border-color:#334155; color:#e2e8f0; }
+.dark :is(.resource-card, .milkdown .ProseMirror .resource-card):hover, .dark :is(.resource-card, .milkdown .ProseMirror .resource-card):focus-visible { background:#202b40; border-color:#818cf8; }
 .dark :is(.resource-card-artwork, .milkdown .ProseMirror .resource-card-artwork) { background:#222d45; border-color:#334155; color:#a5b4fc; }
 .dark :is(.resource-card-site-icon, .milkdown .ProseMirror .resource-card-site-icon) { background:#222d45; }
 .dark :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) small { color:#94a3b8; }
 @media (max-width:480px) {
-  :is(a.resource-card, .milkdown .ProseMirror a.resource-card), :is(.resource-card-artwork, .milkdown .ProseMirror .resource-card-artwork) { min-height:88px; }
+  :is(.resource-card, .milkdown .ProseMirror .resource-card), :is(.resource-card-artwork, .milkdown .ProseMirror .resource-card-artwork) { min-height:88px; }
   :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) { padding:12px 14px; gap:4px; }
   :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) strong { font-size:1em; }
   :is(.resource-card-body, .milkdown .ProseMirror .resource-card-body) small { font-size:11px; }
@@ -41,7 +41,7 @@
   :is(.resource-card-extension, .milkdown .ProseMirror .resource-card-extension) { top:calc(50% + 22px); font-size:8px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  :is(a.resource-card, .milkdown .ProseMirror a.resource-card), :is(.resource-card-artwork-primary, .milkdown .ProseMirror .resource-card-artwork-primary), :is(.resource-card-artwork-action, .milkdown .ProseMirror .resource-card-artwork-action) { transition:none; }
+  :is(.resource-card, .milkdown .ProseMirror .resource-card), :is(.resource-card-artwork-primary, .milkdown .ProseMirror .resource-card-artwork-primary), :is(.resource-card-artwork-action, .milkdown .ProseMirror .resource-card-artwork-action) { transition:none; }
   :is(.resource-card, .milkdown .ProseMirror .resource-card):hover :is(.resource-card-artwork-primary, .milkdown .ProseMirror .resource-card-artwork-primary), :is(.resource-card, .milkdown .ProseMirror .resource-card):focus-visible :is(.resource-card-artwork-primary, .milkdown .ProseMirror .resource-card-artwork-primary), :is(.resource-card-artwork-action, .milkdown .ProseMirror .resource-card-artwork-action) { transform:none; }
 }
 

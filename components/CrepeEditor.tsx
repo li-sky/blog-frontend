@@ -76,7 +76,7 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
                 ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key);
                 insertResourceCard(ctx, { kind: 'link' });
                 // The menu restores focus when closing; focus the inline form after it closes.
-                setTimeout(() => containerRef.current?.querySelector<HTMLInputElement>('.editor-resource-card-form input')?.focus(), 0);
+                setTimeout(() => containerRef.current?.querySelector<HTMLTextAreaElement>('.editor-resource-card-title')?.focus(), 0);
               },
             });
           },
@@ -181,7 +181,10 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
   }, []); // Empty dependency array: only run on mount
 
   return (
-    <div className="relative min-h-[500px]">
+    <div className="relative min-h-[500px]" onBlur={() => {
+      // Flush serialized content before a nearby Save button can use stale listener state.
+      if (isReady && crepeRef.current) onChange(crepeRef.current.getMarkdown());
+    }}>
       <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
       {!isReady && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/70 text-sm text-indigo-500">

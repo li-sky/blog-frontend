@@ -41,3 +41,14 @@ test('legacy publication timestamps use a normal label without exposing migratio
   const verified=publicationEvents({publicationTimeKnown:true,publishedAt:'2026-11-01T00:00:00Z'});
   expect(verified.firstKnown).toBe(true); expect(verified.firstLabel).toBe('首次发布');
 });
+
+test('home cards show date-only metadata without publishing labels or clock time', () => {
+  const post={publicationTimeKnown:true,publishedAt:'2026-11-10T16:30:00Z',publishedUpdatedAt:'2026-11-11T01:20:00Z'};
+  const html=renderToStaticMarkup(React.createElement(PublicationTimes,{post,compact:true,dateOnly:true}));
+  expect(html).toContain('>2026-11-11</time>');
+  expect(html).not.toContain('首次发布');expect(html).not.toContain('发布时间');expect(html).not.toContain('更新发布');
+  expect(html).not.toContain('2026-11-11 00:30');expect(html).not.toContain('2026-11-11 09:20');
+  const detail=renderToStaticMarkup(React.createElement(PublicationTimes,{post}));
+  expect(detail).toContain('首次发布');expect(detail).toContain('2026-11-11 00:30');
+  const admin=renderToStaticMarkup(React.createElement(PublicationTimes,{post,compact:true}));expect(admin).toContain('2026-11-11 00:30');
+});

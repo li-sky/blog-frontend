@@ -19,18 +19,28 @@ export const Home: React.FC = () => {
   const [columnCount, setColumnCount] = useState(getColumnCount);
 
   useEffect(() => {
+    let alive = true;
+    let request = 0;
+    let lastRefresh = 0;
     const fetchPosts = async () => {
+      const current = ++request;
+      lastRefresh = Date.now();
       try {
         const response = await api.posts.getAll();
-        setPosts(response.items || []);
+        if (alive && current === request) { setPosts(response.items || []); setError(''); }
       } catch (err) {
+        if (!alive || current !== request) return;
         console.error("无法获取文章", err);
         setError("你今天运气不好！破站挂壁了~");
       } finally {
-        setIsLoading(false);
+        if (alive && current === request) setIsLoading(false);
       }
     };
-    fetchPosts();
+    void fetchPosts();
+    const refresh = () => { if (document.visibilityState === 'visible' && Date.now() - lastRefresh > 500) void fetchPosts(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { alive = false; request++; window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, []);
 
   useEffect(() => {

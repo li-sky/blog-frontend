@@ -54,7 +54,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       
       <div className="p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
-            <PublicationTimes post={post} compact />
+            <PublicationTimes post={post} compact dateOnly />
             {post.status === 'draft' && (
               <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs px-2 py-0.5 rounded-full">
                 草稿

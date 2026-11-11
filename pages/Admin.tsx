@@ -194,7 +194,7 @@ export const Admin: React.FC = () => {
                 <Link to="/settings/images">
                   <Button variant="outline" className="flex items-center">
                     <Images className="w-4 h-4 mr-2" />
-                    Upgrade Images
+                    图片管理
                   </Button>
                 </Link>
                 <Link to="/settings">

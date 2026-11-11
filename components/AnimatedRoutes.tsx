@@ -5,7 +5,7 @@ import { Home } from '../pages/Home';
 import { Settings } from '../pages/Settings';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
-import { ImageUpgrade } from '../pages/ImageUpgrade';
+import { ImageManagement } from '../pages/ImageManagement';
 
 const PostDetail = lazy(async () => {
   const { PostDetail } = await import('../pages/PostDetail');
@@ -52,7 +52,7 @@ export const AnimatedRoutes: React.FC = () => {
           </PageTransition>
         } />
         <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-        <Route path="/settings/images" element={<PageTransition><ImageUpgrade /></PageTransition>} />
+        <Route path="/settings/images" element={<PageTransition><ImageManagement /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
         <Route path="*" element={

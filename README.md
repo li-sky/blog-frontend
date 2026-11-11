@@ -62,3 +62,9 @@ Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test compo
 - 页面统一按北京时间（`Asia/Shanghai`）显示发布事件。历史数据若无法确认首次发布时间，在数据层通过 `publicationTimeKnown` 保留来源状态，页面按现有记录显示“发布时间”，缺少日期则省略；不把创建时间或迁移当天时间冒充首次发布。
 
 后端需要同步部署支持上述草稿、版本和发布接口。相关回归：`bun test services/draftSaveCoordinator.test.jsx services/publicationDates.test.jsx`；结合卡片测试、`npx tsc --noEmit` 和 `npm run build` 检查集成。手机窄屏布局可在浏览器中验证，真实输入法、软键盘和 Safari 安全区仍应做真机复核。
+
+## 图片管理与大图预览
+
+后台“图片管理”支持分页缩略图、尺寸与原图大小、放大预览、复制 URL/Markdown、上传和删除，替换原 Upgrade Images 页面。删除前核实文章正文、封面与草稿引用；后端也会拒绝删除仍在使用的图片。
+
+上传保留原图下载，600/1200px 用于正文预览；大图预览限制长边 8192px、总像素 16MP，避免超宽全景图超过 WebP 限制。图片处理在 Worker 中执行，并限制文件大小和处理时长。

@@ -94,7 +94,7 @@ export const Settings: React.FC = () => {
         <Link to="/settings/images">
           <Button variant="outline">
             <Images className="mr-2 h-4 w-4" />
-            Upgrade Images
+            图片管理
           </Button>
         </Link>
       </div>

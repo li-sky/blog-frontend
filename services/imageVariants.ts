@@ -19,6 +19,9 @@ export const encodeImageVariants = (
   source: Blob,
   quality = 82,
 ): Promise<EncodedImageVariant[]> => {
+  if (source.size > 50 * 1024 * 1024) {
+    return Promise.reject(new Error('图片大小不能超过 50 MB。'));
+  }
   if (isAnimatedImage(source.type)) {
     return Promise.resolve([]);
   }
@@ -30,8 +33,13 @@ export const encodeImageVariants = (
   );
 
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new Error('图片处理超时，请缩小图片后重试。'));
+    }, 90000);
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       if (event.data.id !== id) return;
+      clearTimeout(timeout);
       worker.terminate();
 
       if (event.data.error) {
@@ -46,6 +54,7 @@ export const encodeImageVariants = (
     };
 
     worker.onerror = (event) => {
+      clearTimeout(timeout);
       worker.terminate();
       reject(new Error(event.message || 'Image encoding worker failed.'));
     };

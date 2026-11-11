@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import encode from '@jsquash/webp/encode.js';
+import { imageVariantDimensions } from '../services/imageEncoding';
 
 interface EncodeRequest {
   id: number;
@@ -30,10 +31,7 @@ workerScope.onmessage = async (event: MessageEvent<EncodeRequest>) => {
     for (const targetWidth of [600, 1200, 'full'] as const) {
       // Small originals are never enlarged. We still create every canonical
       // filename so rendering can use deterministic URLs without an API lookup.
-      const width = targetWidth === 'full'
-        ? bitmap.width
-        : Math.min(targetWidth, bitmap.width);
-      const height = Math.max(1, Math.round((bitmap.height * width) / bitmap.width));
+      const { width, height } = imageVariantDimensions(bitmap.width, bitmap.height, targetWidth);
       const canvas = new OffscreenCanvas(width, height);
       const context = canvas.getContext('2d', { alpha: true });
       if (!context) {

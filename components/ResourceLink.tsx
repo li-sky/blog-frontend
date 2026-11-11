@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { downloadIconMarkup, externalLinkIconMarkup, fileIconMarkup, getFileType, linkIconMarkup, faviconForLink } from './resourceCardArtwork';
+import { parseCardMetadata } from './resourceCardMarkdown';
 import './resource-card.css';
 
 export const markdownLink = (name: string, url: string, title: string) =>
@@ -14,10 +15,10 @@ function textContent(children: React.ReactNode): string {
 
 export function ResourceLink({ href, title, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   const file = title?.match(/^attachment:(\d+)$/);
-  const card = title === 'link-card' || title?.startsWith('link-card:') || !!file;
+  const metadata = parseCardMetadata(title);
+  const card = metadata !== null || !!file;
   const safe = href && (/^https?:\/\//i.test(href) || /^\/(?!\/)/.test(href));
-  const icon = title?.startsWith('link-card:') ? title.slice('link-card:'.length) : '';
-  const safeIcon = /^https?:\/\//i.test(icon) ? icon : '';
+  const safeIcon = metadata?.icon || '';
   const favicon = faviconForLink(href || '');
   const [imageStage, setImageStage] = useState(0);
   useEffect(() => setImageStage(0), [safeIcon, favicon]);
@@ -39,6 +40,6 @@ export function ResourceLink({ href, title, children, ...props }: React.AnchorHT
       </span>
       <span className="resource-card-artwork-action" dangerouslySetInnerHTML={{ __html: file ? downloadIconMarkup : externalLinkIconMarkup }} />
     </span>
-    <span className="resource-card-body"><strong>{children}</strong>{!file && <small>{href}</small>}</span>
+    <span className="resource-card-body"><strong>{children}</strong>{!file && <small className={metadata?.description ? 'resource-card-description' : undefined} title={metadata?.description || undefined}>{metadata?.description || href}</small>}</span>
   </a>;
 }

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { unified } from 'unified';
 import parse from 'remark-parse';
 import stringify from 'remark-stringify';
-import { cardFromParagraph, cardToParagraph, remarkResourceCards } from './resourceCardMarkdown';
+import { cardFromParagraph, cardToParagraph, remarkResourceCards, parseCardMetadata, serializeCardMetadata } from './resourceCardMarkdown';
 
 test('standalone marked links become card blocks, including old saved content', () => {
  const processor = unified().use(parse).use(remarkResourceCards);
@@ -46,4 +46,23 @@ test('link metadata icons roundtrip and unsafe icon protocols are dropped', () =
  expect(cardFromParagraph(processor.parse(source).children[0])).toEqual(attrs);
  const unsafe=processor.parse('[标题](https://example.com "link-card:javascript:alert(1)")');
  expect(cardFromParagraph(unsafe.children[0]).icon).toBeUndefined();
+});
+
+
+test('versioned description and icon metadata survive Markdown and Unicode roundtrips', () => {
+ const processor = unified().use(parse).use(stringify);
+ const attrs = { kind:'link', url:'https://example.com/path', name:'带描述的网站', size:0, icon:'https://example.com/favicon.ico', description:'中文摘要，包含 "引号"、换行\n和 emoji 🌟。' };
+ const source = processor.stringify({ type:'root', children:[cardToParagraph(attrs)] });
+ expect(source).toContain('link-card:v2:');
+ expect(cardFromParagraph(processor.parse(source).children[0])).toEqual(attrs);
+ expect(parseCardMetadata(serializeCardMetadata({description:'只有文字'}))).toEqual({description:'只有文字'});
+});
+
+test('malformed versioned metadata degrades safely while legacy links remain compatible', () => {
+ for (const title of ['link-card:v2:%', 'link-card:v2:not-json', 'link-card:v2:null', 'link-card:v2:%5B1%5D']) expect(parseCardMetadata(title)).toEqual({});
+ expect(parseCardMetadata('ordinary title')).toBeNull();
+ expect(parseCardMetadata('link-card')).toEqual({});
+ expect(parseCardMetadata('link-card:https://example.com/favicon.ico')).toEqual({icon:'https://example.com/favicon.ico'});
+ const bad = 'link-card:v2:' + encodeURIComponent(JSON.stringify({icon:'javascript:alert(1)',description:'安全文字'}));
+ expect(parseCardMetadata(bad)).toEqual({description:'安全文字'});
 });

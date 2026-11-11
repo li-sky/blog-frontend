@@ -146,7 +146,7 @@ const normalizeImageList = (data: any): ImageListResponse => ({
 
 export const api = {
   links: {
-    metadata: async (url: string, signal?: AbortSignal): Promise<{ url: string; title: string; icon: string }> =>
+    metadata: async (url: string, signal?: AbortSignal): Promise<{ url: string; title: string; icon: string; description: string }> =>
       handleResponse(await fetch(`${BASE_URL}/links/metadata?${new URLSearchParams({ url })}`, { headers: getHeaders(), signal })),
   },
   files: {

@@ -24,22 +24,14 @@ This contains everything you need to run the blog UI locally.
 
 ## 附件与链接卡片（2026-11-11）
 
-通过 Crepe 原生 `/` 菜单（或块手柄的 `+`）选择“上传附件”（支持多选，单文件 100 MB）或“链接卡片”。也可输入 `/附件`、`/链接` 筛选。附件与链接在编辑器内以 Milkdown 自定义块节点展示，可预览、拖动、删除与原生撤销。链接标题、URL 与文件显示名称可在卡片原位直接编辑，失焦保存、Enter 切换或结束、Esc 还原；高级设置保留图标和 metadata 操作。拖入非图片文件也会上传为附件；拖入图片保留原图片流程。文章页面显示文件名、大小和下载图标，链接卡片显示标题与域名，支持深色模式。
+通过 Crepe 原生 `/` 菜单或块手柄 `+` 插入附件/链接卡片，支持拖入附件，单文件 100 MB。图片保持原 ImageBlock/WebP 上传流程。
 
-复用标准 Markdown 链接的 title 字段，Milkdown 可以保留，无额外解析语法：
+卡片最大宽度330px、居中，左侧96px正方形图标区，右侧文字左对齐（水平内边距20px）。手机图标区88px。文件显示对应类型图标与文件名；链接有description显示描述，没有才显示URL。metadata图标失败依次回退网站/favicon.ico和通用图标。悬浮或键盘聚焦切换下载/打开图标，支持减少动态效果设置。
 
-```markdown
-[资料.zip](/api/v1/files/<uuid>/download "attachment:2048")
+编辑器中首次点击选中高亮并显示右上角删除按钮，再次点击进入JSON源码区；点卡片外取消选中/结束有效源码编辑。正文方向键可连续进入源码：左右按起点/终点，上下尽量保留横向位置。源码由ProseMirror textblock/contentDOM管理，支持原生IME与撤销。无效JSON保留为resource-card代码围栏，重新打开可修复，不静默丢失内容。普通行内链接保留原生功能。
 
-[项目主页](https://example.com "link-card")
-```
+保存仍为标准Markdown链接：附件title为attachment:<字节数>；旧link-card与link-card:<icon URL>兼容。包含description时使用link-card:v2:<URI编码JSON>，JSON字段为icon、description。源码无效时以resource-card代码围栏保存。
 
-普通链接继续使用 Crepe 原生行内链接和链接浮层。独占段落的卡片标记通过 remark 转为 `resourceCard` AST 节点，由 Milkdown `resource_card` schema 与 NodeView 展示为可编辑块；序列化回标准 Markdown 链接，兼容先前保存的内容。链接卡片编辑时通过作者认证的 `/links/metadata` 读取网页标题与网站图标，保存后阅读页直接使用已保存的信息。旧的 `"link-card"` 标记继续兼容；有图标时使用 `"link-card:https://example.com/favicon.ico"`。文件卡片左侧显示文件类型图标，右侧居中显示文件名；链接卡片左侧显示网站图标，右侧显示标题和完整 URL。两者均采用 1/3 + 2/3 布局，悬浮或键盘聚焦时将图标切换为下载/打开提示，并尊重减少动态效果设置。
+作者metadata接口GET /api/v1/links/metadata?url=...需要JWT与upload_image权限，返回url/title/icon/description。阅读页直接使用已保存metadata；不在每次浏览时抓取网页。附件公开链接可下载，非私密存储，后端接口及存储说明见后端README。
 
-Vite `resolve.dedupe` 保证 ProseMirror model/state/view/transform 使用同一运行时实例，避免多版本构造函数导致输入时报 `Can not convert ... to a Fragment`。
-
-附件需要同时部署后端接口；上传沿用 `upload_image` 权限。`POST /api/v1/files/upload` 接收 multipart `file`，返回 `name`、`size`、`url`；公开的 `GET /api/v1/files/:id/download` 强制下载。附件属于持有链接即可访问的公开资源，不用于私密资料。
-
-验证：`bun test components/ResourceLink.test.jsx components/resourceCardMarkdown.test.jsx`、`npx tsc --noEmit`、`npm run build`。
-
-卡片采用居中紧凑布局，最大宽度 420px，最小高度 96px（手机 88px）；文件名和链接标题继承正文字号，URL 保持较小字号。图标加载失败依次回退到网站 favicon 与通用链接图标。
+Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test components/ResourceLink.test.jsx components/resourceCardMarkdown.test.jsx；npx tsc --noEmit；npm run build。浏览器另外验证选中/编辑/点外退出、方向键、无效源码恢复、删除与撤销。

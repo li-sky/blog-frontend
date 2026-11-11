@@ -152,7 +152,7 @@ export const PostDetail: React.FC = () => {
       .use(remarkMath)
       .use(remarkRehype)
       .use(rehypeKatex)
-      .use(rehypeHighlight, { plainText: ['text', 'txt', 'plaintext', 'plain'] })
+      .use(rehypeHighlight, { plainText: ['text', 'txt', 'plaintext', 'plain', 'resource-card'] })
       .use(rehypeReact, { 
         Fragment, 
         jsx, 

@@ -75,8 +75,6 @@ export const CrepeEditor: React.FC<CrepeEditorProps> = ({ value, onChange }) => 
               onRun: (ctx) => {
                 ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key);
                 insertResourceCard(ctx, { kind: 'link' });
-                // The menu restores focus when closing; focus the inline form after it closes.
-                setTimeout(() => containerRef.current?.querySelector<HTMLTextAreaElement>('.editor-resource-card-title')?.focus(), 0);
               },
             });
           },

@@ -1,36 +1,20 @@
-.milkdown .ProseMirror .editor-resource-card { position:relative; width:100%; max-width:420px; margin:24px auto; padding:0; color:var(--crepe-color-on-background, #334155); }
+.milkdown .ProseMirror .editor-resource-card { position:relative; width:100%; max-width:330px; margin:24px auto; padding:0; color:var(--crepe-color-on-background, #334155); }
 .milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode { outline:2px solid var(--crepe-color-primary, #6366f1); outline-offset:3px; border-radius:14px; }
-.milkdown .ProseMirror .editor-resource-card-toolbar { position:absolute; bottom:100%; right:0; display:flex; gap:6px; padding-bottom:5px; opacity:0; visibility:hidden; pointer-events:none; transition:opacity 100ms; }
-.milkdown .ProseMirror .editor-resource-card:hover .editor-resource-card-toolbar,
-.milkdown .ProseMirror .editor-resource-card:focus-within .editor-resource-card-toolbar,
-.milkdown .ProseMirror .editor-resource-card.card-near .editor-resource-card-toolbar,
-.milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode .editor-resource-card-toolbar,
-.milkdown .ProseMirror .editor-resource-card.is-editing .editor-resource-card-toolbar { opacity:1; visibility:visible; pointer-events:auto; }
-.milkdown .ProseMirror .editor-resource-card-actions { display:flex; gap:8px; }
-.milkdown .ProseMirror .editor-resource-card button { cursor:pointer; padding:5px 10px; border:1px solid var(--crepe-color-outline, #cbd5e1); border-radius:6px; background:var(--crepe-color-surface, #f8fafc); color:inherit; font:inherit; font-size:12px; }
-.milkdown .ProseMirror .editor-resource-card button:hover { background:var(--crepe-color-hover, #e2e8f0); }
-.milkdown .ProseMirror .editor-resource-card-form { display:flex; flex-direction:column; gap:12px; margin-top:10px; padding:16px; border:1px solid var(--crepe-color-outline, #cbd5e1); border-radius:12px; background:var(--crepe-color-surface, #f8fafc); }
-.milkdown .ProseMirror .editor-resource-card-form label { display:flex; flex-direction:column; gap:5px; font-size:12px; }
-.milkdown .ProseMirror .editor-resource-card-form input { width:100%; box-sizing:border-box; border:1px solid var(--crepe-color-outline, #cbd5e1); border-radius:6px; padding:8px 10px; font:inherit; font-size:14px; background:var(--crepe-color-background, white); color:inherit; }
-.milkdown .ProseMirror .editor-resource-card-form input:focus { outline:2px solid var(--crepe-color-primary, #6366f1); outline-offset:1px; }
+.milkdown .ProseMirror .editor-resource-card-preview { cursor:text; }
+.milkdown .ProseMirror .editor-resource-card-open { text-decoration:none; cursor:pointer; }
+.milkdown .ProseMirror .editor-resource-card-source { display:none; border:1px solid var(--crepe-color-outline, #cbd5e1); border-radius:12px; background:var(--crepe-color-surface, #f8fafc); overflow:hidden; }
+.milkdown .ProseMirror .editor-resource-card.card-source-active .editor-resource-card-source,
+.milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-source { display:block; }
+.milkdown .ProseMirror .editor-resource-card.card-source-active .editor-resource-card-preview,
+.milkdown .ProseMirror .editor-resource-card.card-source-invalid .editor-resource-card-preview { display:none; }
+.milkdown .ProseMirror .editor-resource-card-source-heading { display:block; padding:8px 12px; border-bottom:1px solid var(--crepe-color-outline, #cbd5e1); font-size:11px; color:var(--crepe-color-on-surface-variant, #64748b); }
+.milkdown .ProseMirror .editor-resource-card-source pre { display:block; margin:0; padding:12px; overflow-x:auto; background:transparent; border:0; border-radius:0; box-shadow:none; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
+.milkdown .ProseMirror .editor-resource-card-source code { display:block; margin:0; padding:0; background:transparent; border:0; box-shadow:none; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; color:inherit; }
 .milkdown .ProseMirror .editor-resource-card-error { color:#dc2626; font-size:12px; }
 .milkdown .ProseMirror .editor-resource-card-status { color:var(--crepe-color-on-surface-variant, #64748b); font-size:12px; }
-@media (hover:none) { .milkdown .ProseMirror .editor-resource-card-toolbar { opacity:1; visibility:visible; pointer-events:auto; } }
-.milkdown .ProseMirror .editor-resource-card-preview { cursor:default; }
-.milkdown .ProseMirror .editor-resource-card-preview .resource-card-body { cursor:text; }
-.milkdown .ProseMirror .editor-resource-card-open { text-decoration:none; cursor:pointer; }
-.milkdown .ProseMirror .editor-resource-card-title,
-.milkdown .ProseMirror .editor-resource-card-url {
-  display:block; box-sizing:border-box; width:100%; min-width:0; max-width:100%; min-height:0;
-  border:0; border-radius:0; outline:0; box-shadow:none; background:transparent; color:inherit;
-  font:inherit; line-height:1.55; text-align:inherit; padding:0; margin:0; resize:none; overflow:hidden;
-  white-space:pre-wrap; overflow-wrap:anywhere; appearance:none;
-}
-.milkdown .ProseMirror .editor-resource-card-title { font-size:1em; font-weight:600; }
-.milkdown .ProseMirror .editor-resource-card-url { font-size:11px; font-weight:400; line-height:1.6; color:#64748b; }
-.dark .milkdown .ProseMirror .editor-resource-card-url { color:#94a3b8; }
-.milkdown .ProseMirror .editor-resource-card-title:focus,
-.milkdown .ProseMirror .editor-resource-card-url:focus { background:transparent; box-shadow:inset 0 -1px 0 var(--crepe-color-primary, #a5b4fc); }
-.milkdown .ProseMirror .editor-resource-card-form[hidden] { display:none; }
 .milkdown .ProseMirror .editor-resource-card-status:empty,
 .milkdown .ProseMirror .editor-resource-card-error:empty { display:none; }
+
+.milkdown .ProseMirror .editor-resource-card-delete { display:none; position:absolute; top:-10px; right:-10px; z-index:5; width:24px; height:24px; padding:0; border:1px solid #cbd5e1; border-radius:50%; background:var(--crepe-color-background,white); color:var(--crepe-color-on-background,#334155); font-size:18px; line-height:20px; cursor:pointer; }
+.milkdown .ProseMirror .editor-resource-card.ProseMirror-selectednode .editor-resource-card-delete { display:block; }
+.milkdown .ProseMirror .editor-resource-card-preview { cursor:default; }

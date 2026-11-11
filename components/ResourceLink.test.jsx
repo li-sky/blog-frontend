@@ -7,6 +7,7 @@ import rehypeReact from 'rehype-react';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { markdownLink, ResourceLink } from './ResourceLink';
+import { serializeCardMetadata } from './resourceCardMarkdown';
 
 const render = async (source) => {
   const result = await unified().use(remarkParse).use(remarkRehype)
@@ -71,4 +72,22 @@ test('legacy link cards try the target origin favicon without saved metadata', a
   const html = await render(markdownLink('旧链接', 'https://example.com/path', 'link-card'));
   expect(html).toContain('src="https://example.com/favicon.ico"');
   expect(html).toContain('resource-card-symbol');
+});
+
+
+test('description replaces the URL in the preview while preserving the destination', async () => {
+ const description = '这是页面的 metadata 描述，包含中文。';
+ const title = serializeCardMetadata({icon:'https://example.com/favicon.ico',description});
+ const html = await render(markdownLink('页面标题','https://example.com/target',title));
+ expect(html).toContain('href="https://example.com/target"');
+ expect(html).toContain('class="resource-card-description"');
+ expect(html).toContain(`title="${description}"`);
+ expect(html).toContain(`>${description}</small>`);
+ expect(html).not.toContain('<small>https://example.com/target</small>');
+});
+
+test('damaged metadata still renders a card with URL fallback', async () => {
+ const html = await render(markdownLink('页面标题','https://example.com/target','link-card:v2:%broken'));
+ expect(html).toContain('resource-card');
+ expect(html).toContain('<small>https://example.com/target</small>');
 });

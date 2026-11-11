@@ -59,6 +59,6 @@ Vite resolve.dedupe确保ProseMirror构造函数一致。验证：bun test compo
 - `publishedAt` 表示可确认的最早发布时间，后续发布不覆盖。
 - `publishedUpdatedAt` 仅在已发布内容确实再次更新发布时记录；单纯修改或自动保存草稿不改变公开时间。
 - `draftUpdatedAt` 是编辑草稿的保存时间，`createdAt`／`updatedAt` 是数据记录时间，均不替代公开发布时间。
-- 页面统一按北京时间（`Asia/Shanghai`）显示发布事件。历史数据若无法确认首次发布时间，通过 `publicationTimeKnown` 标明不确定性，显示历史发布记录／首次发布时间待确认；不把创建时间或迁移当天时间冒充首次发布。
+- 页面统一按北京时间（`Asia/Shanghai`）显示发布事件。历史数据若无法确认首次发布时间，在数据层通过 `publicationTimeKnown` 保留来源状态，页面按现有记录显示“发布时间”，缺少日期则省略；不把创建时间或迁移当天时间冒充首次发布。
 
 后端需要同步部署支持上述草稿、版本和发布接口。相关回归：`bun test services/draftSaveCoordinator.test.jsx services/publicationDates.test.jsx`；结合卡片测试、`npx tsc --noEmit` 和 `npm run build` 检查集成。手机窄屏布局可在浏览器中验证，真实输入法、软键盘和 Safari 安全区仍应做真机复核。

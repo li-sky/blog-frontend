@@ -29,5 +29,5 @@ export function publicationEvents(post: PublicationEvents) {
   const first = publicationTime(post.publishedAt);
   const candidate = publicationTime(post.publishedUpdatedAt);
   const updated = candidate && (!first || Date.parse(candidate.iso) > Date.parse(first.iso)) ? candidate : null;
-  return { first, updated, firstKnown: post.publicationTimeKnown === true, firstLabel: post.publicationTimeKnown === true ? '首次发布' : '历史发布记录', missingLabel: post.status === 'draft' ? '未发布' : '发布时间待确认' };
+  return { first, updated, firstKnown: post.publicationTimeKnown === true, firstLabel: post.publicationTimeKnown === true ? '首次发布' : '发布时间', missingLabel: post.status === 'draft' ? '未发布' : null };
 }

@@ -44,9 +44,10 @@ export const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setColumnCount(getColumnCount());
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const media = [window.matchMedia('(min-width: 768px)'), window.matchMedia('(min-width: 1024px)')];
+    const updateColumns = () => setColumnCount(getColumnCount());
+    media.forEach(query => query.addEventListener('change', updateColumns));
+    return () => media.forEach(query => query.removeEventListener('change', updateColumns));
   }, []);
 
   // 轮询分配：第 1 篇进第 1 列、第 2 篇进第 2 列……
@@ -61,18 +62,17 @@ export const Home: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-600" />
+      <div className="flex justify-center items-center h-64" role="progressbar" aria-label="正在加载文章列表">
+        <Loader2 aria-hidden="true" className="w-8 h-8 motion-safe:animate-spin text-accent-600" />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-
-
+      <h1 className="sr-only">文章列表</h1>
       {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg text-center">
+        <div role="alert" className="bg-red-50 text-red-700 p-4 rounded-lg text-center">
           {error}
         </div>
       )}
@@ -80,10 +80,12 @@ export const Home: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
         {columns.map((columnPosts, colIndex) => (
           <div key={colIndex} className="flex flex-col gap-6">
-            {columnPosts.map(post => (
+            {columnPosts.map((post, postIndex) => (
               <PostCard
                 key={post.id}
                 post={post}
+                imageLoading={postIndex === 0 ? 'eager' : 'lazy'}
+                priority={colIndex === 0 && postIndex === 0}
               />
             ))}
           </div>
@@ -93,7 +95,7 @@ export const Home: React.FC = () => {
       {!isLoading && posts.length === 0 && !error && (
         <div className="text-center py-20 bg-surface rounded-xl border border-dashed border-gray-300">
           <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">尚无文章</h3>
+          <h2 className="text-lg font-medium text-gray-900">尚无文章</h2>
           <p className="text-gray-500 mt-1">快更新！</p>
         </div>
       )}

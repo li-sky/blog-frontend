@@ -6,7 +6,8 @@ import remarkRehype from 'remark-rehype';
 import rehypeReact from 'rehype-react';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { markdownLink, ResourceLink } from './ResourceLink';
+import { useContext } from 'react';
+import { markdownLink, MarkdownLinkContext, ResourceLink } from './ResourceLink';
 import { serializeCardMetadata } from './resourceCardMarkdown';
 
 const render = async (source) => {
@@ -37,6 +38,15 @@ test('link cards open a new tab while normal links stay inline', async () => {
 
 test('unsafe protocols cannot become cards', async () => {
   expect(await render('[恶意链接](javascript:alert "link-card")')).not.toContain('resource-card');
+});
+
+test('linked Markdown images can retain anchor semantics without nesting a zoom button', () => {
+  function ImageWithZoom() {
+    return useContext(MarkdownLinkContext) ? <img src="/sample.png" alt="示例" /> : <button type="button">查看大图</button>;
+  }
+  const html = renderToStaticMarkup(<ResourceLink href="https://example.com"><ImageWithZoom /></ResourceLink>);
+  expect(html).toContain('<a href="https://example.com"><img');
+  expect(html).not.toContain('<button');
 });
 
 test('metadata icon cards retain full URL and split artwork/body structure', async () => {

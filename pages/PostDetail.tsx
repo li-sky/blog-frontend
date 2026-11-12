@@ -1,13 +1,13 @@
 import { PublicationTimes } from '../components/PublicationTimes';
-import { ResourceLink } from '../components/ResourceLink';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { MarkdownLinkContext, ResourceLink } from '../components/ResourceLink';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { Post, Comment } from '../types';
+import { Post, Comment, User } from '../types';
 import { Loader2, MessageSquare, Trash2, Send } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { MarkdownTable } from '../components/MarkdownTable';
 import { PostImageViewer } from '../components/PostImageViewer';
-import { api } from '../services/api';
+import { api, APIError } from '../services/api';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -27,63 +27,17 @@ interface ZoomedImage {
   alt: string;
 }
 
-interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
-  onZoom?: (src: string) => void;
-  onZoomSrc?: string;
-}
-
-const LazyImage: React.FC<LazyImageProps> = ({
-  onZoom,
-  onZoomSrc,
-  src,
+const LazyImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = ({
   className,
   ...props
 }) => {
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const placeholderSrc =
-    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
-  useEffect(() => {
-    if (!imgRef.current) return;
-    if (!('IntersectionObserver' in window)) {
-      setIsVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.disconnect();
-          }
-        });
-      },
-      { rootMargin: '300px 0px' }
-    );
-
-    observer.observe(imgRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const handleZoom = () => {
-    if (!onZoom) return;
-    const target = onZoomSrc || (typeof src === 'string' ? src.split('?')[0] : '');
-    if (target) onZoom(target);
-  };
 
   return (
     <img
       {...props}
-      ref={imgRef}
-      src={isVisible ? src : placeholderSrc}
-      data-src={src}
-      loading="lazy"
       decoding="async"
       className={`${className || ''} ${!isLoaded ? 'min-h-[150px] object-cover bg-gray-100 dark:bg-gray-800' : ''}`}
-      onClick={handleZoom}
       onLoad={() => setIsLoaded(true)}
     />
   );
@@ -97,10 +51,21 @@ export const PostDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [content, setContent] = useState<React.ReactNode>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [commentBody, setCommentBody] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState('');
+  const [commentsError, setCommentsError] = useState('');
+  const [postError, setPostError] = useState('');
+  const [contentError, setContentError] = useState('');
   const zoomedImage = (state as { articleImage?: ZoomedImage } | null)?.articleImage;
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const [user] = useState<User | null>(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  });
+
+  useEffect(() => {
+    if (post) document.title = `${post.title} | Skyli的小站`;
+  }, [post]);
 
   const openImage = useCallback((source: string, alt: string) => {
     const articleImage: ZoomedImage = {
@@ -112,21 +77,21 @@ export const PostDetail: React.FC = () => {
   }, [navigate, pathname, search, hash]);
 
   useEffect(() => {
+    let active = true;
+    setContent(null);
+    setContentError('');
     if (!post?.content) return;
 
     const CustomImage = (props: any) => {
+      const linked = useContext(MarkdownLinkContext);
       const originalSrc = typeof props.src === 'string' ? props.src : '';
       const responsive = getResponsiveImageProps(originalSrc);
 
-      return (
-        <span className="block my-6">
-          <LazyImage
+      const image = <LazyImage
             {...props}
             src={responsive.src}
             srcSet={responsive.srcSet}
-            sizes="(max-width: 768px) 100vw, 1200px"
-            onZoom={(source) => openImage(source, props.alt || '')}
-            onZoomSrc={originalSrc}
+            sizes="(max-width: 768px) calc(100vw - 32px), 768px"
             onError={(event) => {
               if (event.currentTarget.dataset.originalFallback === 'true') {
                 event.currentTarget.style.display = 'none';
@@ -136,8 +101,11 @@ export const PostDetail: React.FC = () => {
               event.currentTarget.srcset = '';
               event.currentTarget.src = originalSrc;
             }}
-            className="cursor-zoom-in mx-auto"
-          />
+            className="mx-auto my-0"
+          />;
+      return (
+        <span className="block my-6">
+          {linked ? image : <button type="button" className="block max-w-full mx-auto cursor-zoom-in rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500" aria-label={`查看大图${props.alt ? `：${props.alt}` : ''}`} onClick={() => openImage(originalSrc, props.alt || '')}>{image}</button>}
           {props.title && (
             <span className="block text-center mt-2 text-sm text-gray-500 dark:text-gray-400">
               {props.title}
@@ -152,6 +120,18 @@ export const PostDetail: React.FC = () => {
       .use(remarkGfm)
       .use(remarkMath)
       .use(remarkRehype)
+      .use(() => (tree: any) => {
+        let firstImage = true;
+        const visit = (node: any) => {
+          if (node.tagName === 'img') {
+            node.properties.loading = firstImage ? 'eager' : 'lazy';
+            if (firstImage) node.properties.fetchPriority = 'high';
+            firstImage = false;
+          }
+          node.children?.forEach(visit);
+        };
+        visit(tree);
+      })
       .use(rehypeKatex)
       .use(rehypeHighlight, { plainText: ['text', 'txt', 'plaintext', 'plain', 'resource-card'] })
       .use(rehypeReact, { 
@@ -161,62 +141,80 @@ export const PostDetail: React.FC = () => {
         components: {
           img: CustomImage,
           table: MarkdownTable,
+          th: (props: React.ThHTMLAttributes<HTMLTableCellElement>) => <th {...props} scope="col" />,
           a: ResourceLink,
         }
       } as any)
       .process(post.content)
       .then((file) => {
-        setContent(file.result);
+        if (active) setContent(file.result);
       })
       .catch((err) => {
         console.error('Markdown processing failed:', err);
+        if (active) setContentError('正文加载失败，请刷新后重试。');
       });
+    return () => { active = false; };
   }, [post?.content, openImage]);
 
   useEffect(() => {
     if (!id) return;
+    let active = true;
+    setIsLoading(true);
+    setPost(null);
+    setPostError('');
     const fetchPost = async () => {
       try {
         const data = await api.posts.getOne(id);
-        setPost(data);
+        if (active) setPost(data);
       } catch (error) {
         console.error("Failed to load post", error);
+        if (active) setPostError(error instanceof APIError && error.status === 404 ? '未找到文章' : '文章加载失败，请稍后重试。');
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     };
-    fetchPost();
+    void fetchPost();
+    return () => { active = false; };
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
+    let active = true;
+    setComments([]);
+    setIsLoadingComments(true);
+    setCommentsError('');
     const fetchComments = async () => {
       try {
         const data = await api.comments.list(id);
-        setComments(data.items);
+        if (active) setComments(data.items);
       } catch (error) {
         console.error("Failed to load comments", error);
+        if (active) setCommentsError('评论加载失败，请稍后重试。');
+      } finally {
+        if (active) setIsLoadingComments(false);
       }
     };
-    fetchComments();
+    void fetchComments();
+    return () => { active = false; };
   }, [id]);
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!commentBody.trim() || !id) return;
+    if (isSubmittingComment || isLoadingComments || !id) return;
+    if (!commentBody.trim()) {
+      setCommentError('请输入评论内容。');
+      (e.currentTarget.elements.namedItem('comment') as HTMLTextAreaElement | null)?.focus();
+      return;
+    }
+    setCommentError('');
     setIsSubmittingComment(true);
     try {
       const newComment = await api.comments.create(id, commentBody);
-      // Optimistically add the comment or re-fetch. 
-      // Since the API returns the created comment, we can just add it.
-      // However, we might need to enrich it with user info if the API doesn't return it fully populated.
-      // Assuming API returns what we need or we can display basic info.
-      // For now, let's just prepend it.
       setComments(prev => [newComment, ...prev]);
       setCommentBody('');
     } catch (error) {
       console.error("Failed to post comment", error);
-      alert("Failed to post comment");
+      setCommentError('评论发布失败，请稍后重试。');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -235,8 +233,8 @@ export const PostDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-600" />
+      <div className="flex justify-center items-center h-64" role="progressbar" aria-label="正在加载文章">
+        <Loader2 aria-hidden="true" className="w-8 h-8 motion-safe:animate-spin text-accent-600" />
       </div>
     );
   }
@@ -244,7 +242,7 @@ export const PostDetail: React.FC = () => {
   if (!post) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">未找到文章</h2>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{postError || '未找到文章'}</h1>
         <Button onClick={() => navigate('/')} className="mt-4" variant="secondary">
           回家
         </Button>
@@ -270,6 +268,9 @@ export const PostDetail: React.FC = () => {
               <img 
                 src={`https://www.gravatar.com/avatar/${post.user.emailSha256}?d=identicon`} 
                 alt={post.user.username} 
+                width={24}
+                height={24}
+                decoding="async"
                 className="h-6 w-6 rounded-full mr-2"
               />
               <div className="mr-2" />
@@ -283,16 +284,18 @@ export const PostDetail: React.FC = () => {
         It automatically styles standard HTML elements (h1, p, ul, etc.) generated by remark/rehype.
       */}
       <div className="post-content prose prose-indigo prose-lg max-w-none text-black dark:text-gray-200 dark:prose-invert font-sans prose-headings:font-serif">
+         {contentError && <p role="alert">{contentError}</p>}
          {content}
       </div>
 
       <hr className="my-12 border-gray-200 dark:border-gray-700" />
 
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
           <MessageSquare className="w-6 h-6 mr-2" />
           锐评 ({comments.length})
-        </h3>
+        </h2>
+        {commentsError && <p role="alert" className="mb-4 text-red-600 dark:text-red-400">{commentsError}</p>}
 
         {user ? (
           <form onSubmit={handleCommentSubmit} className="mb-10 bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -302,16 +305,20 @@ export const PostDetail: React.FC = () => {
               </label>
               <textarea
                 id="comment"
+                name="comment"
+                disabled={isSubmittingComment}
+                aria-describedby={commentError ? 'comment-error' : undefined}
                 rows={4}
-                className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm p-3"
+                className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-accent-500 focus:ring-accent-500 text-base p-3"
                 placeholder="分享你的想法..."
                 value={commentBody}
-                onChange={(e) => setCommentBody(e.target.value)}
+                onChange={(e) => { setCommentBody(e.target.value); setCommentError(''); }}
                 required
               />
+              {commentError && <p id="comment-error" role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{commentError}</p>}
             </div>
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmittingComment} icon={<Send className="w-4 h-4" />}>
+              <Button type="submit" disabled={isSubmittingComment || isLoadingComments} icon={<Send className="w-4 h-4" />}>
                 {isSubmittingComment ? '发布中...' : '发布锐评'}
               </Button>
             </div>
@@ -326,7 +333,7 @@ export const PostDetail: React.FC = () => {
         )}
 
         <div className="space-y-6">
-          {comments.length === 0 ? (
+          {isLoadingComments ? <p role="progressbar" aria-label="正在加载评论" className="text-center text-gray-500 dark:text-gray-400">正在加载评论…</p> : commentsError ? null : comments.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">还没人锐评。成为第一个分享你想法的人吧！</p>
           ) : (
             comments.map((comment) => (
@@ -337,6 +344,10 @@ export const PostDetail: React.FC = () => {
                       <img 
                         src={`https://www.gravatar.com/avatar/${comment.user.emailSha256}?d=identicon`} 
                         alt={comment.user.username} 
+                        width={32}
+                        height={32}
+                        loading="lazy"
+                        decoding="async"
                         className="h-8 w-8 rounded-full mr-3"
                       />
                     ) : (
@@ -348,16 +359,18 @@ export const PostDetail: React.FC = () => {
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {comment.user?.username || `User #${comment.userId}`}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <time dateTime={comment.createdAt} className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(comment.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                      </time>
                     </div>
                   </div>
                   {user && (user.id === comment.userId || user.roles?.includes('admin')) && (
                     <button
+                      type="button"
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
                       title="Delete comment"
+                      aria-label={`删除 ${comment.user?.username || `User #${comment.userId}`} 的评论`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

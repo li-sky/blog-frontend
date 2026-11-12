@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Home } from '../pages/Home';
 import { Settings } from '../pages/Settings';
 import { Login } from '../pages/Login';
@@ -18,12 +18,13 @@ const Admin = lazy(async () => {
 });
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const reducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={reducedMotion ? false : { opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
+      exit={reducedMotion ? undefined : { opacity: 0, x: -20 }}
+      transition={{ duration: reducedMotion ? 0 : 0.3, ease: "easeInOut" }}
     >
       {children}
     </motion.div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, PenBoxIcon } from 'lucide-react';
 import { publicationEvents, type PublicationEvents } from '../services/publicationDates';
 

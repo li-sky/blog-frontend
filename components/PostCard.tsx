@@ -6,9 +6,11 @@ import { getStaticVariantUrl } from '../services/imageVariants';
 
 interface PostCardProps {
   post: Post;
+  imageLoading?: 'eager' | 'lazy';
+  priority?: boolean;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, imageLoading = 'lazy', priority = false }) => {
   const { displaySummary, imageUrl } = useMemo(() => {
     const rawSummary = post.summary || '';
     // Match content between %...%
@@ -36,9 +38,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {imageUrl && (
         <div className="w-full overflow-hidden">
            <img 
-             className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500" 
+             className="w-full h-auto object-cover transform motion-safe:group-hover:scale-105 motion-safe:transition-transform duration-500"
              src={getStaticVariantUrl(imageUrl, 600) || imageUrl}
              alt={post.title} 
+             loading={priority ? 'eager' : imageLoading}
+             fetchPriority={priority ? 'high' : undefined}
+             decoding="async"
              onError={(e) => {
                const image = e.currentTarget;
                if (image.dataset.originalFallback !== 'true') {
@@ -62,9 +67,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             )}
         </div>
 
-        <h5 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-gray-100 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors font-serif font-extrabold">
+        <h2 className="mb-2 text-2xl tracking-tight text-gray-900 dark:text-gray-100 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors font-serif font-extrabold">
           {post.title}
-        </h5>
+        </h2>
         
         <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
           {displaySummary}

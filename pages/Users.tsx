@@ -1,7 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useId } from 'react';
 import { api } from '../services/api';
 import { User, RegisterRequest, UpdateUserRequest, Role } from '../types';
-import { Trash2, Edit, UserPlus, Shield, X, Check } from 'lucide-react';
+import { Trash2, Edit, UserPlus, X } from 'lucide-react';
+
+
+const UserDialog: React.FC<{ titleId: string; onClose: () => void; busy: boolean; children: React.ReactNode }> = ({ titleId, onClose, busy, children }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+  return <dialog ref={dialogRef} aria-labelledby={titleId} onClose={event => { if (!event.currentTarget.open) onClose(); }}
+    onCancel={event => { if (busy) event.preventDefault(); }}
+    className="m-auto w-[calc(100%-2rem)] max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-lg bg-surface p-6 text-foreground dark:bg-gray-800 backdrop:bg-black/50 [&::backdrop]:overflow-hidden [&::backdrop]:overscroll-contain">
+    {children}
+    {busy && <p role="status" className="mt-3 text-sm">Saving changes…</p>}
+  </dialog>;
+};
 
 export const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -11,71 +27,90 @@ export const Users: React.FC = () => {
   const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  const id = useId();
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const mounted = useRef(false);
+  const request = useRef(0);
+
   // Form states
   const [formData, setFormData] = useState<RegisterRequest>({ username: '', email: '', password: '' });
   const [editFormData, setEditFormData] = useState<UpdateUserRequest>({});
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
 
   const fetchData = async () => {
+    if (!mounted.current) return;
+    const current = ++request.current;
     try {
       setLoading(true);
       const [usersRes, rolesRes] = await Promise.all([
         api.users.list({ limit: 100 }),
         api.roles.list({ limit: 100 })
       ]);
+      if (!mounted.current || current !== request.current) return;
+      setError('');
       setUsers(usersRes.items);
       setAvailableRoles(rolesRes.items);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch data');
+    } catch (err) {
+      if (mounted.current && current === request.current) setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
-      setLoading(false);
+      if (mounted.current && current === request.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    mounted.current = true;
+    void fetchData();
+    return () => { mounted.current = false; request.current++; };
   }, []);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
       await api.users.delete(id);
-      setUsers(users.filter(u => u.id !== id));
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete user');
+      if (!mounted.current) return;
+      setUsers(current => current.filter(u => u.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete user');
     }
   };
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true; setSaving(true);
     try {
       await api.users.createAdmin(formData);
+      if (!mounted.current) return;
       setShowCreateAdminModal(false);
       setFormData({ username: '', email: '', password: '' });
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Failed to create admin');
-    }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to create admin');
+    } finally { savingRef.current = false; if (mounted.current) setSaving(false); }
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingUser) return;
+    if (!editingUser || savingRef.current) return;
+    savingRef.current = true; setSaving(true);
     try {
       // Update info
       if (Object.keys(editFormData).length > 0) {
-        await api.users.update(editingUser.id, editFormData);
+        const { password, ...profile } = editFormData;
+        await api.users.update(editingUser.id, { ...profile, ...(password ? { password } : {}) });
       }
       // Update roles
       await api.users.setRoles(editingUser.id, selectedRoleIds);
+      if (!mounted.current) return;
       
       setEditingUser(null);
       setEditFormData({});
       setSelectedRoleIds([]);
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update user');
-    }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update user');
+    } finally { savingRef.current = false; if (mounted.current) setSaving(false); }
   };
 
   const startEdit = (user: User) => {
@@ -90,12 +125,12 @@ export const Users: React.FC = () => {
     setSelectedRoleIds(currentRoleIds);
   };
 
-  if (loading) return <div className="text-center py-10">Loading users...</div>;
-  if (error) return <div className="text-center py-10 text-red-500">{error}</div>;
+  if (loading) return <div role="status" className="text-center py-10">Loading users...</div>;
+  if (error) return <div role="alert" className="text-center py-10 text-red-500">{error}</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">User Management</h2>
         <button
           onClick={() => setShowCreateAdminModal(true)}
@@ -107,15 +142,15 @@ export const Users: React.FC = () => {
       </div>
 
       <div className="bg-surface dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg" role="region" aria-label="用户列表" tabIndex={0}>
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table aria-label="Users" className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Username</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Roles</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created At</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Username</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Roles</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created At</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-surface dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -135,10 +170,10 @@ export const Users: React.FC = () => {
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => startEdit(user)} className="text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300 mr-4">
+                  <button type="button" aria-label={`Edit ${user.username}`} onClick={() => startEdit(user)} className="text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300 mr-1 p-4">
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(user.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                  <button type="button" aria-label={`Delete ${user.username}`} onClick={() => handleDelete(user.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-4">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </td>
@@ -150,49 +185,65 @@ export const Users: React.FC = () => {
 
       {/* Create Admin Modal */}
       {showCreateAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <UserDialog titleId={`${id}-create-title`} busy={saving} onClose={() => setShowCreateAdminModal(false)}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Create Admin User</h2>
-              <button onClick={() => setShowCreateAdminModal(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+              <h2 id={`${id}-create-title`} className="text-xl font-bold text-gray-900 dark:text-gray-100">Create Admin User</h2>
+              <button type="button" disabled={saving} aria-label="Close create user dialog" onClick={() => setShowCreateAdminModal(false)} className="p-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreateAdmin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                <label htmlFor={`${id}-create-username`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                 <input
+                  id={`${id}-create-username`}
+                  name="username"
+                  disabled={saving}
+                  autoComplete="username"
+                  autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                  ref={node => { if (node) node.autofocus = true; }}
                   type="text"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={formData.username}
                   onChange={e => setFormData({ ...formData, username: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <label htmlFor={`${id}-create-email`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                 <input
+                  id={`${id}-create-email`}
+                  name="email"
+                  disabled={saving}
+                  autoComplete="email"
                   type="email"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <label htmlFor={`${id}-create-password`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
                 <input
+                  id={`${id}-create-password`}
+                  name="password"
+                  disabled={saving}
+                  autoComplete="new-password"
+                  aria-describedby={`${id}-create-password-help`}
                   type="password"
                   required
                   minLength={12}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
                 />
+                <p id={`${id}-create-password-help`} className="mt-1 text-sm text-gray-500 dark:text-gray-400">Minimum 12 characters.</p>
               </div>
               <div className="flex justify-end pt-4">
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => setShowCreateAdminModal(false)}
                   className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
@@ -200,63 +251,80 @@ export const Users: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={saving}
                   className="px-4 py-2 text-sm font-medium text-white bg-accent-600 border border-transparent rounded-md hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
                 >
                   Create
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </UserDialog>
       )}
 
       {/* Edit User Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <UserDialog titleId={`${id}-edit-title`} busy={saving} onClose={() => setEditingUser(null)}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Edit User: {editingUser.username}</h2>
-              <button onClick={() => setEditingUser(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+              <h2 id={`${id}-edit-title`} className="text-xl font-bold text-gray-900 dark:text-gray-100">Edit User: {editingUser.username}</h2>
+              <button type="button" disabled={saving} aria-label="Close edit user dialog" onClick={() => setEditingUser(null)} className="p-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                <label htmlFor={`${id}-edit-username`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                 <input
+                  id={`${id}-edit-username`}
+                  name="username"
+                  disabled={saving}
+                  autoComplete="username"
+                  autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                  ref={node => { if (node) node.autofocus = true; }}
                   type="text"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={editFormData.username || ''}
                   onChange={e => setEditFormData({ ...editFormData, username: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <label htmlFor={`${id}-edit-email`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                 <input
+                  id={`${id}-edit-email`}
+                  name="email"
+                  disabled={saving}
+                  autoComplete="email"
                   type="email"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={editFormData.email || ''}
                   onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password (Leave blank to keep)</label>
+                <label htmlFor={`${id}-edit-password`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password (Leave blank to keep)</label>
                 <input
+                  id={`${id}-edit-password`}
+                  name="password"
+                  disabled={saving}
+                  autoComplete="new-password"
+                  aria-describedby={`${id}-edit-password-help`}
                   type="password"
                   minLength={12}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm p-2 border"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-base p-2 border"
                   value={editFormData.password || ''}
                   onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
                 />
+                <p id={`${id}-edit-password-help`} className="mt-1 text-sm text-gray-500 dark:text-gray-400">Minimum 12 characters for a new password.</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Roles</label>
+                <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Roles</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2 dark:border-gray-600">
                   {availableRoles.map(role => (
                     <div key={role.id} className="flex items-center">
                       <input
                         type="checkbox"
-                        id={`role-${role.id}`}
+                        disabled={saving}
+                        name="roles"
+                        id={`${id}-role-${role.id}`}
                         checked={selectedRoleIds.includes(role.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -267,7 +335,7 @@ export const Users: React.FC = () => {
                         }}
                         className="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-300 rounded"
                       />
-                      <label htmlFor={`role-${role.id}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                      <label htmlFor={`${id}-role-${role.id}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                         {role.name}
                       </label>
                     </div>
@@ -277,6 +345,7 @@ export const Users: React.FC = () => {
               <div className="flex justify-end pt-4">
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => setEditingUser(null)}
                   className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
@@ -284,14 +353,14 @@ export const Users: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={saving}
                   className="px-4 py-2 text-sm font-medium text-white bg-accent-600 border border-transparent rounded-md hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
                 >
                   Save Changes
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </UserDialog>
       )}
     </div>
   );

@@ -36,6 +36,18 @@ test('every light and dark palette has readable body and primary button text', (
   }
 });
 
+test('generated text, secondary text and links contrast with both canvas and elevated surfaces', () => {
+  for (const palette of palettes) for (const mode of ['light', 'dark']) {
+    const tokens = paletteTokens(palette[mode], mode === 'dark');
+    for (const key of ['text', 'muted', 'accent']) for (const background of ['canvas', 'surface', 'code', ...(mode === 'dark' ? ['border'] : [])]) {
+      expect(contrast(tokens[`--site-${key}`], tokens[`--site-${background}`]), `${palette.id} ${mode} ${key} on ${background}`).toBeGreaterThanOrEqual(4.5);
+    }
+    for (const key of ['comment', 'keyword', 'string', 'number', 'function']) {
+      expect(contrast(tokens[`--site-${key}`], tokens['--site-code']), `${palette.id} ${mode} ${key} in code`).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+});
+
 function fakeClock() {
   let time=1000,id=0;const jobs=new Map();
   return {schedule(callback,delay){jobs.set(++id,{callback,due:time+delay});return id;},cancel(id){jobs.delete(id);},now:()=>time,advance(amount){time+=amount;for(const [id,job]of jobs)if(job.due<=time){jobs.delete(id);job.callback();}}};

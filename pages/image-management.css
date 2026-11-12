@@ -25,7 +25,8 @@
 .image-library-notice { color:var(--site-success); background:color-mix(in srgb,var(--site-success) 10%,var(--site-surface)); }
 .image-library-error { color:var(--site-error); background:color-mix(in srgb,var(--site-error) 10%,var(--site-surface)); }
 .image-library-dialog { width:min(480px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); margin:auto; padding:20px; border:0; border-radius:14px; background:var(--site-surface); color:var(--site-text); overflow:auto; }
-.image-library-dialog::backdrop { background:#0008; }
+.image-library-dialog:modal { overscroll-behavior:contain; }
+.image-library-dialog::backdrop { background:#0008; overflow:hidden; overscroll-behavior:contain; }
 .image-library-dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .image-library-dialog h2 { font-size:20px; font-weight:700; }
 .image-library-dialog p { margin-top:12px; font-size:14px; line-height:1.7; }

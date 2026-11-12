@@ -1,4 +1,4 @@
-import { AuthResponse, DraftContent, PostDraft, Comment, CommentListResponse, EncodedImageVariant, Image, ImageListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, SetUserRolesRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
+import { AuthResponse, DraftContent, PostDraft, Comment, CommentListResponse, EncodedImageVariant, Image, ImageListResponse, InitAdminRequest, LoginRequest, Post, PostListResponse, PostPayload, RegisterRequest, User, UserListResponse, UpdateUserRequest, Role, RoleListResponse, CreateRoleRequest, UpdateRoleRequest, Setting, SettingsResponse, UpdateSettingRequest } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 

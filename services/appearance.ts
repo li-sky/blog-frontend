@@ -19,6 +19,8 @@ export function applyAppearance(root: HTMLElement, appearance: Appearance, syste
   root.classList.toggle('dark', dark);
   root.dataset.colorPalette = appearance.palette;
   root.style.colorScheme = dark ? 'dark' : 'light';
+  const meta = root.ownerDocument?.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
+  if (meta) meta.content = appearance.mode === 'system' ? 'light dark' : appearance.mode;
 }
 export function nextTheme(mode: ThemeMode, systemDark: boolean): ThemeMode {
   return isDarkMode(mode, systemDark) ? 'light' : 'dark';

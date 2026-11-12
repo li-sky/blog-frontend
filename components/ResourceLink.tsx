@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { downloadIconMarkup, externalLinkIconMarkup, fileIconMarkup, getFileType, linkIconMarkup, faviconForLink } from './resourceCardArtwork';
 import { parseCardMetadata } from './resourceCardMarkdown';
 import './resource-card.css';
+
+export const MarkdownLinkContext = createContext(false);
 
 export const markdownLink = (name: string, url: string, title: string) =>
   `[${name.replace(/[\\\[\]]/g, '\\$&').replace(/[\r\n]/g, ' ')}](<${url.replace(/</g, '%3C').replace(/>/g, '%3E')}> "${title}")`;
@@ -24,7 +26,7 @@ export function ResourceLink({ href, title, children, ...props }: React.AnchorHT
   useEffect(() => setImageStage(0), [safeIcon, favicon]);
   const imageSrc = imageStage === 0 ? (safeIcon || favicon) : imageStage === 1 ? favicon : '';
   const nextIcon = () => setImageStage(imageStage === 0 && safeIcon && favicon && safeIcon !== favicon ? 1 : 2);
-  if (!card || !safe) return <a {...props} href={href} title={title}>{children}</a>;
+  if (!card || !safe) return <a {...props} href={href} title={title}><MarkdownLinkContext.Provider value={true}>{children}</MarkdownLinkContext.Provider></a>;
   const name = textContent(children);
   const bytes = Number(file?.[1] || 0);
   const size = bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
@@ -40,6 +42,6 @@ export function ResourceLink({ href, title, children, ...props }: React.AnchorHT
       </span>
       <span className="resource-card-artwork-action" dangerouslySetInnerHTML={{ __html: file ? downloadIconMarkup : externalLinkIconMarkup }} />
     </span>
-    <span className="resource-card-body"><strong>{children}</strong>{!file && <small className={metadata?.description ? 'resource-card-description' : undefined} title={metadata?.description || undefined}>{metadata?.description || href}</small>}</span>
+    <span className="resource-card-body"><strong><MarkdownLinkContext.Provider value={true}>{children}</MarkdownLinkContext.Provider></strong>{!file && <small className={metadata?.description ? 'resource-card-description' : undefined} title={metadata?.description || undefined}>{metadata?.description || href}</small>}</span>
   </a>;
 }

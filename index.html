@@ -2,36 +2,12 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Skyli的小站</title>
-    <script>try{const mode=localStorage.getItem('theme');const dark=mode==='dark'||((mode!=='light'&&mode!=='dark')&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',dark);document.documentElement.dataset.colorPalette=localStorage.getItem('color-palette')||'solarized';document.documentElement.style.colorScheme=dark?'dark':'light';}catch{}</script>
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--site-canvas);
-        color: var(--site-text);
-      }
-      .serif {
-        font-family: serif;
-      }
-      /* Custom Scrollbar for a cleaner look */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--site-border);
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--site-muted);
-      }
-    </style>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <script>try{const mode=localStorage.getItem('theme');const dark=mode==='dark'||((mode!=='light'&&mode!=='dark')&&matchMedia('(prefers-color-scheme: dark)').matches);document.querySelector('meta[name="color-scheme"]').content=mode==='light'||mode==='dark'?mode:'light dark';document.documentElement.classList.toggle('dark',dark);document.documentElement.dataset.colorPalette=localStorage.getItem('color-palette')||'solarized';document.documentElement.style.colorScheme=dark?'dark':'light';}catch{}</script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

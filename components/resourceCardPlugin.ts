@@ -233,6 +233,7 @@ const resourceCardView = $view(resourceCardSchema, () => (initialNode, view, get
     const current = attrs || node.attrs as CardAttrs; const isFile = current.kind === 'file';
     dom.dataset.resourceCard = current.kind; preview.dataset.kind = current.kind;
     title.textContent = current.name || (isFile ? '附件' : '链接卡片');
+    removeButton.setAttribute('aria-label', `删除卡片：${title.textContent}`);
     subtitle.textContent = isFile ? formatFileSize(current.size) : current.description?.trim() || current.url;
     subtitle.className = isFile ? 'sr-only' : current.description ? 'resource-card-description' : '';
     subtitle.title = current.description || current.url;

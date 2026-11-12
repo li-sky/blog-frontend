@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
+import { useReducedMotion } from 'framer-motion';
 
 const defaultForm = {
   username: '',
@@ -15,9 +16,10 @@ export const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Refs for animation
-  const daisyRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  const daisyRef = useRef<HTMLButtonElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
+  const interactionAnimations = useRef<Animation[]>([]);
 
   const handleChange = (field: keyof typeof defaultForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -43,21 +45,19 @@ export const Register: React.FC = () => {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       navigate('/admin');
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Initialize Particles
   useEffect(() => {
     const container = particlesRef.current;
-    if (!container) return;
+    const daisy = daisyRef.current;
+    if (!container || !daisy || reducedMotion !== false) return;
 
-    // Clear existing particles if any (though useEffect runs once)
-    container.innerHTML = '';
-
+    const animations: Animation[] = [];
     for (let i = 0; i < 20; i++) {
       const p = document.createElement('div');
       p.className = 'particle bg-yellow-400/25 dark:bg-yellow-200/10';
@@ -69,72 +69,49 @@ export const Register: React.FC = () => {
       p.style.opacity = (Math.random() * 0.4).toString();
       container.appendChild(p);
       
-      p.animate([
+      animations.push(p.animate([
         { transform: 'translate(0,0)', opacity: p.style.opacity },
         { transform: `translate(${(Math.random()-0.5)*100}px, ${(Math.random()-0.5)*100}px)`, opacity: 0 }
-      ], { duration: Math.random()*8000 + 4000, iterations: Infinity });
+      ], { duration: Math.random() * 2000 + 2000, fill: 'forwards' }));
     }
-  }, []);
+    const center = daisy.querySelector('.flower-center');
+    if (center) animations.push(center.animate([{ opacity: 0 }, { opacity: 1 }], {
+      delay: 300, duration: 1500, fill: 'backwards',
+    }));
 
-  // Bloom Animation
-  useEffect(() => {
-    // Collect all petals
-    const petals = Array.from(document.querySelectorAll('.petal')) as SVGElement[];
-    const center = document.querySelector('.flower-center') as SVGElement;
-
-    if (!center || petals.length === 0) return;
-
-    // 1. Show center
-    setTimeout(() => {
-      center.style.opacity = '1';
-    }, 300);
-
-    // 2. Shuffle petals
-    const shuffledPetals = [...petals];
-    for (let i = shuffledPetals.length - 1; i > 0; i--) {
+    const petals = Array.from(daisy.querySelectorAll('.petal'));
+    for (let i = petals.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffledPetals[i], shuffledPetals[j]] = [shuffledPetals[j], shuffledPetals[i]];
+      [petals[i], petals[j]] = [petals[j], petals[i]];
     }
-
-    // 3. Show petals
-    shuffledPetals.forEach((petal, index) => {
-      setTimeout(() => {
-        petal.style.opacity = '1';
-      }, 600 + index * 40);
+    petals.forEach((petal, index) => {
+      animations.push(petal.animate([{ opacity: 0 }, { opacity: 1 }], {
+        delay: 600 + index * 40, duration: 800, fill: 'backwards',
+      }));
     });
-  }, []);
 
-  // Interaction: Bloom Button / Click on Flower
+    return () => {
+      animations.forEach(animation => animation.cancel());
+      interactionAnimations.current.forEach(animation => animation.cancel());
+      interactionAnimations.current = [];
+      container.replaceChildren();
+    };
+  }, [reducedMotion]);
+
   const handleBloomInteraction = () => {
-    const petals = document.querySelectorAll('.petal') as NodeListOf<SVGElement>;
     const daisy = daisyRef.current;
+    if (!daisy || reducedMotion !== false) return;
 
-    petals.forEach((petal) => {
-      const currentTransform = petal.getAttribute('transform') || '';
-      // Extract rotation and translation if needed, but here we just append scale
-      // Note: The original snippet used getAttribute('transform') which is static in SVG attributes
-      // We need to be careful not to overwrite the base transform permanently or mess it up.
-      // The CSS transition handles the smooth change.
-      
-      const delay = Math.random() * 500;
-      
-      setTimeout(() => {
-        petal.style.transform = `${currentTransform} scale(1.1)`;
-        setTimeout(() => {
-          petal.style.transform = ''; // Reset to CSS defined or attribute defined
-        }, 600);
-      }, delay);
+    interactionAnimations.current.forEach(animation => animation.cancel());
+    interactionAnimations.current = Array.from(daisy.querySelectorAll('.petal'), petal => {
+      return petal.animate([{ scale: '1' }, { scale: '1.1' }, { scale: '1' }], {
+        delay: Math.random() * 500, duration: 1200, easing: 'ease-in-out',
+      });
     });
-    
-    if (daisy) {
-      daisy.style.animation = 'none';
-      void daisy.offsetWidth; // Trigger reflow
-      daisy.style.animation = 'sway 2s ease-in-out infinite';
-      
-      setTimeout(() => {
-        daisy.style.animation = 'sway 7s ease-in-out infinite';
-      }, 2000);
-    }
+    interactionAnimations.current.push(daisy.animate([
+      { transform: 'rotate(0)' }, { transform: 'rotate(-2deg)' },
+      { transform: 'rotate(2deg)' }, { transform: 'rotate(0)' },
+    ], { duration: 2000, easing: 'ease-in-out' }));
   };
 
   return (
@@ -142,14 +119,16 @@ export const Register: React.FC = () => {
       
       {/* Left Side: Art & Poetry */}
       <div className="lg:w-1/2 relative overflow-hidden flex flex-col items-center justify-center p-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-        <div ref={particlesRef} className="absolute inset-0 pointer-events-none" />
+        <div ref={particlesRef} className="absolute inset-0 pointer-events-none" aria-hidden="true" />
         
-        <div 
+        <button
+          type="button"
+          aria-label="让花朵绽放"
           ref={daisyRef}
-          className="daisy-container w-64 h-64 md:w-96 md:h-96 cursor-pointer mb-8 animate-sway drop-shadow-xl"
+          className="daisy-container w-64 h-64 md:w-96 md:h-96 cursor-pointer mb-8 drop-shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-500"
           onClick={handleBloomInteraction}
         >
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" aria-hidden="true">
             <defs>
               <filter id="innerPetalShadow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" />
@@ -231,28 +210,34 @@ export const Register: React.FC = () => {
               </g>
             </g>
           </svg>
-        </div>
+        </button>
       </div>
 
       {/* Right Side: Registration Form */}
       <div className="lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-surface dark:bg-gray-900">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-sans">让我访问！</h2>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-sans">让我访问！</h1>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl px-4 py-3 text-sm">
+              <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl px-4 py-3 text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                <label htmlFor="register-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
                 <input
+                  id="register-username"
+                  name="username"
+                  autoComplete="username"
                   type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={form.username}
                   onChange={handleChange('username')}
                   className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
@@ -262,9 +247,13 @@ export const Register: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <input
+                  id="register-email"
+                  name="email"
+                  autoComplete="email"
                   type="email"
+                  spellCheck={false}
                   value={form.email}
                   onChange={handleChange('email')}
                   className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
@@ -274,15 +263,22 @@ export const Register: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
                 <input
+                  id="register-password"
+                  name="password"
+                  autoComplete="new-password"
                   type="password"
+                  enterKeyHint="done"
+                  minLength={12}
+                  aria-describedby="register-password-help"
                   value={form.password}
                   onChange={handleChange('password')}
                   className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-3 focus:ring-2 focus:ring-yellow-200 dark:focus:ring-yellow-900 focus:border-yellow-400 dark:focus:border-yellow-700 transition-all outline-none"
                   placeholder="Minimum 12 characters"
                   required
                 />
+                <p id="register-password-help" className="mt-1 text-sm text-gray-500 dark:text-gray-400">Minimum 12 characters.</p>
               </div>
             </div>
 
@@ -297,7 +293,7 @@ export const Register: React.FC = () => {
 
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-yellow-600 dark:text-yellow-400 font-medium hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors">
+            <Link to="/login" className="text-accent-600 dark:text-accent-300 font-medium hover:underline transition-colors">
               Sign in
             </Link>
           </p>

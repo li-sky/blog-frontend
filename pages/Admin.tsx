@@ -34,6 +34,7 @@ export const Admin: React.FC = () => {
   const sessionRef = useRef<DraftSaveCoordinator | null>(null);
   const activeRef = useRef(false);
   const actionRef = useRef(false);
+  const editRequestRef = useRef(0);
 
   const persist = (state: SaveState) => {
     try {
@@ -56,7 +57,7 @@ export const Admin: React.FC = () => {
       if (!user.roles.includes('editor') && !user.roles.includes('admin')) { navigate('/'); return; }
       setCurrentUser(user); void fetchPosts();
     }).catch(() => { if (alive) navigate('/login'); });
-    return () => { alive = false; activeRef.current = false; sessionRef.current?.dispose(); };
+    return () => { alive = false; editRequestRef.current++; activeRef.current = false; sessionRef.current?.dispose(); };
   }, [navigate]);
 
   const installSession = (draft: PostDraft | null, cache: any = null) => {
@@ -83,12 +84,13 @@ export const Admin: React.FC = () => {
     }
     setEditorSeed(seed => seed + 1); setView('editor');
   };
-  const handleCreateNew = () => installSession(null, readCache(null));
+  const handleCreateNew = () => { editRequestRef.current++; setIsLoading(false); installSession(null, readCache(null)); };
   const handleEdit = async (post: Post) => {
+    const request = ++editRequestRef.current;
     setIsLoading(true);
-    try { installSession(await api.posts.getDraft(post.id), readCache(post.id)); }
-    catch { setMessage('无法读取编辑草稿，请重试。'); }
-    finally { setIsLoading(false); }
+    try { const draft = await api.posts.getDraft(post.id); if (request === editRequestRef.current) installSession(draft, readCache(post.id)); }
+    catch { if (request === editRequestRef.current) setMessage('无法读取编辑草稿，请重试。'); }
+    finally { if (request === editRequestRef.current) setIsLoading(false); }
   };
   const change = (patch: Partial<DraftContent>) => {
     if (actionRef.current) return;
@@ -191,17 +193,13 @@ export const Admin: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             {currentUser.roles.includes('admin') && (
               <>
-                <Link to="/settings/images">
-                  <Button variant="outline" className="flex items-center">
+                <Link to="/settings/images" className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500">
                     <Images className="w-4 h-4 mr-2" />
                     图片管理
-                  </Button>
                 </Link>
-                <Link to="/settings">
-                  <Button variant="outline" className="flex items-center">
+                <Link to="/settings" className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500">
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
-                  </Button>
                 </Link>
               </>
             )}
@@ -212,14 +210,14 @@ export const Admin: React.FC = () => {
 
         {message && <p role="alert" className="mb-4 text-sm text-red-600">{message}</p>}
         <div className="bg-surface dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" role="region" aria-label="文章列表" tabIndex={0} aria-busy={isLoading}>
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-surface dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -242,14 +240,14 @@ export const Admin: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     {(post.status === 'draft' || post.hasUnpublishedChanges) && typeof post.id === 'number' && (
-                      <button onClick={() => handlePublish(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300" title="发布最新草稿">
+                      <button type="button" onClick={() => handlePublish(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300" title="发布最新草稿" aria-label={`发布最新草稿：${post.title}`}>
                         <Globe className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => handleEdit(post)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300" title="编辑">
+                    <button type="button" onClick={() => handleEdit(post)} className="inline-flex h-11 w-11 items-center justify-center text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300" title="编辑" aria-label={`编辑：${post.title}`}>
                       <FileText className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="删除">
+                    <button type="button" onClick={() => handleDelete(post.id)} className="inline-flex h-11 w-11 items-center justify-center text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="删除" aria-label={`删除：${post.title}`}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>

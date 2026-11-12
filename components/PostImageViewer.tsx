@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, X } from 'lucide-react';
+import { Download, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface PostImageViewerProps {
   previewSrc: string;
@@ -67,6 +67,11 @@ export function PostImageViewer({ previewSrc, originalSrc, alt, onClose }: PostI
       y: to.y - center.y - (from.y - center.y - current.y) * ratio,
     });
   }, [updateView]);
+
+  function zoomFromCenter(factor: number) {
+    const bounds = stageRef.current?.getBoundingClientRect();
+    if (bounds) zoom(factor, { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 });
+  }
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -170,7 +175,11 @@ export function PostImageViewer({ previewSrc, originalSrc, alt, onClose }: PostI
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
         }}
       >
-        <header className="flex shrink-0 items-center justify-end gap-2 pb-2">
+        <header className="flex shrink-0 flex-wrap items-center justify-end gap-2 pb-2">
+          <button type="button" className={buttonClass} aria-label="缩小图片" disabled={view.scale <= 1} onClick={() => zoomFromCenter(1 / 1.5)}><ZoomOut size={20} aria-hidden="true" /></button>
+          <span className="text-sm tabular-nums" aria-live="off">{Math.round(view.scale * 100)}%</span>
+          <button type="button" className={buttonClass} aria-label="放大图片" disabled={view.scale >= 6} onClick={() => zoomFromCenter(1.5)}><ZoomIn size={20} aria-hidden="true" /></button>
+          <button type="button" className={buttonClass} aria-label="重置图片缩放" disabled={view.scale === 1} onClick={() => updateView(fit)}><RotateCcw size={20} aria-hidden="true" /></button>
           <a href={originalSrc} download className={buttonClass} aria-label="下载原图">
             <Download size={20} aria-hidden="true" />
             <span className="hidden sm:inline">下载原图</span>
@@ -181,7 +190,19 @@ export function PostImageViewer({ previewSrc, originalSrc, alt, onClose }: PostI
         </header>
         <div
           ref={stageRef}
+          role="group"
+          aria-label="图片预览，放大后可用方向键平移"
+          tabIndex={0}
           className="flex min-h-0 flex-1 touch-none select-none items-center justify-center overflow-hidden"
+          onKeyDown={event => {
+            if (event.altKey || event.ctrlKey || event.metaKey || viewRef.current.scale <= 1) return;
+            const directions: Record<string, Point> = { ArrowLeft: { x: 48, y: 0 }, ArrowRight: { x: -48, y: 0 }, ArrowUp: { x: 0, y: 48 }, ArrowDown: { x: 0, y: -48 } };
+            const delta = directions[event.key];
+            if (!delta) return;
+            event.preventDefault();
+            const current = viewRef.current;
+            updateView({ ...current, x: current.x + delta.x, y: current.y + delta.y });
+          }}
           onClick={(event) => {
             if (event.target === event.currentTarget && !moved.current) requestClose();
           }}

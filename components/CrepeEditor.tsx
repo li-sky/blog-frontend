@@ -1,7 +1,7 @@
 import { resourceCardPlugins, insertResourceCard } from './resourceCardPlugin';
 import { commandsCtx } from '@milkdown/core';
 import { clearTextInCurrentBlockCommand, toggleStrongCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useId, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
 import { TextSelection } from '@milkdown/prose/state';
@@ -33,11 +33,21 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
   const initialCanonicalRef = useRef<string | null>(null);
   const sourceOutput = (markdown: string) => markdown === initialCanonicalRef.current ? initialSourceRef.current : markdown;
   const [moreOpen,setMoreOpen] = useState(false);
+  const moreId = useId();
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const [isReady, setIsReady] = useState(false);
+  const [initializationError, setInitializationError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => { onBusyChange?.(isUploading); return () => onBusyChange?.(false); }, [isUploading,onBusyChange]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const closeOutside = (event: PointerEvent) => { if (event.target instanceof Node && !toolsRef.current?.contains(event.target)) setMoreOpen(false); };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => document.removeEventListener('pointerdown', closeOutside);
+  }, [moreOpen]);
   useImperativeHandle(ref, () => ({ getMarkdown: () => readyRef.current && crepeRef.current ? sourceOutput(crepeRef.current.getMarkdown()) : lastMarkdownRef.current, focus: () => readyRef.current && crepeRef.current?.editor.action(ctx => ctx.get(editorViewCtx).focus()) }), []);
   const emit = (raw: string) => { const markdown = sourceOutput(raw); if (markdown !== lastMarkdownRef.current) { lastMarkdownRef.current = markdown; changeRef.current(markdown); } };
   const uploadPictures = async (files: File[]) => {
@@ -50,8 +60,8 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         editor.action(insert(`![${escapeMarkdownAlt(files[index].name)}](${result.url})`));
         setUploadProgress(Math.round((index+1)/files.length*100));
       }
-    } catch(error) { window.alert(error instanceof Error ? error.message : '图片上传失败'); }
-    finally { busyRef.current=false; setIsUploading(false); }
+    } catch(error) { if (crepeRef.current?.editor === editor) window.alert(error instanceof Error ? error.message : '图片上传失败'); }
+    finally { if (crepeRef.current?.editor === editor) { busyRef.current=false; setIsUploading(false); } }
   };
   const runMobile = (kind: 'link'|'bold'|'heading'|'list') => {
     crepeRef.current?.editor.action(ctx => {
@@ -84,16 +94,20 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         setUploadProgress(Math.round(((index + 1) / files.length) * 100));
       }
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : '文件上传失败');
-    } finally { busyRef.current = false; setIsUploading(false); }
+      if (crepeRef.current?.editor === editor) window.alert(error instanceof Error ? error.message : '文件上传失败');
+    } finally { if (crepeRef.current?.editor === editor) { busyRef.current = false; setIsUploading(false); } }
   };
 
   useEffect(() => {
     if (!containerRef.current) return;
     let disposed=false;
+    // StrictMode can start a second effect before the first asynchronous create
+    // finishes. Give each instance its own host so a late create stays detached.
+    const host = document.createElement('div');
+    containerRef.current.append(host);
 
     const crepe = new Crepe({
-      root: containerRef.current,
+      root: host,
       defaultValue: value || '',
       featureConfigs: {
         [Crepe.Feature.CodeMirror]: { theme: editorPalette },
@@ -123,7 +137,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
           onUpload: async (file: File) => {
             busyRef.current=true; setIsUploading(true);
             try { return (await uploadImage(file)).url; }
-            finally { busyRef.current=false; setIsUploading(false); }
+            finally { if (!disposed) { busyRef.current=false; setIsUploading(false); } }
           },
         },
       },
@@ -134,7 +148,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
 
     crepe.on((listener) =>
       listener.markdownUpdated((_, markdown) => {
-        emit(markdown);
+        if (!disposed) emit(markdown);
       })
     );
 
@@ -142,6 +156,12 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       .create()
       .then(() => {
         if (disposed) return;
+        crepe.editor.action(ctx => {
+          const dom = ctx.get(editorViewCtx).dom;
+          dom.setAttribute('role', 'textbox');
+          dom.setAttribute('aria-label', '文章正文');
+          dom.setAttribute('aria-multiline', 'true');
+        });
         readyRef.current=true;
         initialCanonicalRef.current=crepe.getMarkdown();
         lastMarkdownRef.current=initialSourceRef.current;
@@ -149,6 +169,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       })
       .catch((err) => {
         console.error('Failed to initialize Crepe editor', err);
+        if (!disposed) setInitializationError(true);
       });
 
     const handleDragOver = (event: DragEvent) => {
@@ -183,7 +204,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       });
 
       if (attachmentFiles.length) await uploadAttachments(attachmentFiles);
-      if (!imageFiles.length) return;
+      if (!imageFiles.length || disposed) return;
       busyRef.current = true;
       setIsUploading(true);
       setUploadProgress(0);
@@ -193,6 +214,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       try {
         for (const file of imageFiles) {
           const image = await uploadImage(file, file.name);
+          if (disposed) return;
           completed += 1;
           setUploadProgress(Math.round((completed / imageFiles.length) * 100));
           const alt = escapeMarkdownAlt(file.name);
@@ -203,10 +225,9 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         editor.action(insert(markdownChunks.join('\n\n')));
       } catch (error) {
         console.error('Image encoding or upload failed', error);
-        window.alert(error instanceof Error ? error.message : 'Image upload failed.');
+        if (!disposed) window.alert(error instanceof Error ? error.message : 'Image upload failed.');
       } finally {
-        busyRef.current = false;
-        setIsUploading(false);
+        if (!disposed) { busyRef.current = false; setIsUploading(false); }
       }
     };
 
@@ -219,10 +240,8 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       container?.removeEventListener('drop', handleDrop, true);
       disposed=true; readyRef.current=false;
       crepeRef.current=null;
-      crepe.destroy();
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
+      host.remove();
+      void crepe.destroy().catch(error => console.error('Failed to destroy Crepe editor', error));
     };
   }, []); // Empty dependency array: only run on mount
 
@@ -233,20 +252,20 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     }}>
       <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
       <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={event=>{const files=Array.from(event.target.files || []);event.target.value='';void uploadPictures(files);}} />
-      <div className="crepe-mobile-tools" role="toolbar" aria-label="正文插入工具" onMouseDown={event=>event.preventDefault()}>
+      <div ref={toolsRef} className="crepe-mobile-tools" role="group" aria-label="正文插入工具" onMouseDown={event=>event.preventDefault()} onKeyDown={event=>{if(event.key==='Escape' && moreOpen){event.preventDefault();event.stopPropagation();setMoreOpen(false);moreButtonRef.current?.focus();}}}>
         <button type="button" disabled={!isReady || isUploading} onClick={()=>imageInputRef.current?.click()}>图片</button>
         <button type="button" disabled={!isReady || isUploading} onClick={()=>fileInputRef.current?.click()}>附件</button>
         <button type="button" disabled={!isReady || isUploading} onClick={()=>runMobile('link')}>链接卡片</button>
-        <button type="button" aria-expanded={moreOpen} disabled={!isReady || isUploading} onClick={()=>setMoreOpen(open=>!open)}>更多</button>
-        {moreOpen && <div className="crepe-mobile-more"><button type="button" onClick={()=>runMobile('bold')}>粗体</button><button type="button" onClick={()=>runMobile('heading')}>二级标题</button><button type="button" onClick={()=>runMobile('list')}>列表</button></div>}
+        <button ref={moreButtonRef} type="button" aria-expanded={moreOpen} aria-controls={moreId} disabled={!isReady || isUploading} onClick={()=>setMoreOpen(open=>!open)}>更多</button>
+        {moreOpen && <div id={moreId} className="crepe-mobile-more"><button type="button" disabled={isUploading} onClick={()=>runMobile('bold')}>粗体</button><button type="button" disabled={isUploading} onClick={()=>runMobile('heading')}>二级标题</button><button type="button" disabled={isUploading} onClick={()=>runMobile('list')}>列表</button></div>}
       </div>
       {!isReady && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-accent-200 bg-surface/70 text-sm text-accent-500">
-          Initializing editor…
+        <div role={initializationError ? 'alert' : 'status'} className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-accent-200 bg-surface/70 text-sm text-accent-500">
+          {initializationError ? '编辑器初始化失败，请返回文章列表后重试。' : 'Initializing editor…'}
         </div>
       )}
       {isUploading && (
-        <div className="absolute left-4 right-4 top-4 z-20 rounded-lg border border-accent-200 bg-surface/90 px-3 py-2 text-xs text-accent-600 shadow">
+        <div role="status" className="absolute left-4 right-4 top-4 z-20 rounded-lg border border-accent-200 bg-surface/90 px-3 py-2 text-xs text-accent-600 shadow">
           <div className="mb-1 flex items-center justify-between">
             <span>正在上传文件…</span>
             <span>{uploadProgress}%</span>

@@ -22,6 +22,24 @@ This contains everything you need to run the blog UI locally.
 2. Run the app:
    `npm run dev`
 
+## 前端开发指导与检查
+
+项目已安装 GoogleChrome 的 `modern-web-guidance` 技能，文件位于 `.agents/skills/modern-web-guidance`，来源记录在 `skills-lock.json`。更新使用 `npx modern-web-guidance@latest update`。
+
+- `npm run typecheck`：检查类型、未使用的局部变量和参数。
+- `bun run test`：运行回归测试，需要 Bun。
+- `npm run build`：生成生产构建。
+
+登录与注册表单支持标签关联、密码自动填充和原生校验。注册页装饰动画在四秒内结束；花朵可通过点击或键盘再次触发，离开页面时取消动画，减少动态效果模式下保持静态显示。
+
+### 全页检查（2026-11-12）
+
+按 Modern Web Guidance 对首页、文章详情、登录、注册、管理后台、设置、图片管理和 404 全部路由，以及用户／角色管理、编辑器、图片预览、删除确认和配色弹窗进行代码审查。重点修复原生弹窗与焦点、表单标签与自动填充、标题与导航、图片加载优先级、异步生命周期、评论提交竞态和配色对比度；保留原有草稿保存与发布语义。
+
+Chrome 使用 mock API 验证桌面浅色（1280×900）与手机深色（390×844）的 28 个页面状态；axe 的 WCAG 2 A/AA、2.1 A/AA、2.2 AA 及 best-practice 标签检查无违规、无页面横向溢出、无浏览器异常。另行检查弹窗 Esc／焦点返回、图片缩放平移、评论提交、编辑器 StrictMode 单实例、导航 Popover 及不支持 Popover 时的回退。50 个 Bun 测试、类型检查与生产构建通过；配色测试覆盖所有色板的明暗模式及 UI／代码文字对比度。
+
+上述结果针对测试内容与浏览器，不是正式合规认证。文章作者提供的 Markdown 仍可能缺少图片尺寸或跳过标题层级；真实后端、真机软键盘／IME、Safari、Firefox 和真实读屏器仍需专项验证。构建保留原有大分块与 Browserslist 数据过旧提示。`legacy-scan` 的 35 条确定性规则未发现遗留模式，但其覆盖范围仅约为指导库的 20%。
+
 ## 附件与链接卡片（2026-11-11）
 
 通过 Crepe 原生 `/` 菜单或块手柄 `+` 插入附件/链接卡片，支持拖入附件，单文件 100 MB。图片保持原 ImageBlock/WebP 上传流程。

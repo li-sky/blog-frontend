@@ -6,16 +6,11 @@ export function attachSmoothCaret(root: HTMLElement) {
   let previous: { cursor: HTMLElement; left: number; top: number } | null = null;
   let animation: Animation | undefined;
   let composing = false;
-  let keyboard = false;
 
   const reset = () => {
     animation?.cancel();
     animation = undefined;
     previous = null;
-  };
-  const onPointer = () => { keyboard = false; reset(); };
-  const onKey = (event: KeyboardEvent) => {
-    keyboard = !event.isComposing && !event.metaKey && !event.ctrlKey && !event.altKey;
   };
   const onCompositionStart = () => { composing = true; reset(); };
   const onCompositionEnd = () => { composing = false; reset(); };
@@ -33,7 +28,7 @@ export function attachSmoothCaret(root: HTMLElement) {
     const last = previous;
     previous = { cursor, left, top };
     const selection = root.ownerDocument.getSelection();
-    if (!motion.matches || !keyboard || composing || root.ownerDocument.activeElement !== root
+    if (!motion.matches || composing || root.ownerDocument.activeElement !== root
       || !selection?.isCollapsed || !last || last.cursor !== cursor) {
       animation?.cancel();
       animation = undefined;
@@ -49,32 +44,26 @@ export function attachSmoothCaret(root: HTMLElement) {
     const dy = last.top + (offset[1] || 0) - top;
     animation?.cancel();
     animation = undefined;
-    // Snap across wrapped lines and distant jumps rather than sweeping over text.
-    if (Math.abs(dx) > 120 || Math.abs(dy) > cursor.offsetHeight * 2) return;
+    // Keep the whole path continuous, including clicks, Enter and line wrapping.
+    // Short moves stay responsive; longer moves get a little more settling time.
+    const duration = 90 + Math.min(70, Math.hypot(dx, dy) * .12);
     animation = cursor.animate([
-      // Snappy: cover most of the distance immediately, then gently settle.
-      { translate: `${dx * .35}px ${dy * .35}px` },
+      { translate: `${dx}px ${dy}px` },
       { translate: '0px 0px' },
-    ], { duration: 100, easing: 'cubic-bezier(.16,1,.3,1)' });
+    ], { duration, easing: 'cubic-bezier(.22,1,.36,1)' });
   });
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['style'] });
-  root.addEventListener('keydown', onKey);
-  root.addEventListener('pointerdown', onPointer);
   root.addEventListener('compositionstart', onCompositionStart);
   root.addEventListener('compositionend', onCompositionEnd);
   root.addEventListener('focusout', reset);
-  root.ownerDocument.addEventListener('scroll', reset, true);
   motion.addEventListener('change', reset);
 
   return () => {
     observer.disconnect();
     reset();
-    root.removeEventListener('keydown', onKey);
-    root.removeEventListener('pointerdown', onPointer);
     root.removeEventListener('compositionstart', onCompositionStart);
     root.removeEventListener('compositionend', onCompositionEnd);
     root.removeEventListener('focusout', reset);
-    root.ownerDocument.removeEventListener('scroll', reset, true);
     motion.removeEventListener('change', reset);
   };
 }

@@ -8,6 +8,7 @@
 
 .crepe-editor .ProseMirror .prosemirror-virtual-cursor {
   border-radius: 1px;
+  translate: 0px;
 }
 
 /* Keep a calm pause at either end of the blink, with a short fade between. */

@@ -16,7 +16,7 @@ const errorMessage = (error: unknown) => (error as APIError)?.data?.error === 'r
   ? '编辑器版本已更新，本地内容已保留。请先备份当前内容，再重新打开管理页恢复草稿。'
   : (error as { status?: number })?.status === 409
   ? '服务器已有更新的草稿。本地内容已保留，请载入服务器草稿后再编辑。'
-  : '草稿保存失败，内容已保留在本机；将重试，也可以点击立即保存。';
+  : '草稿保存失败，内容已保留在本机；将自动重试，也可以点击“重试保存”。';
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -183,7 +183,6 @@ export const Admin: React.FC = () => {
     try { const draft = await api.posts.getDraft(id); await api.posts.publish(id, draft.version); await fetchPosts(); }
     catch (error) { setMessage(errorMessage(error)); }
   };
-  const handleLogout = () => { api.auth.logout(); navigate('/login'); };
   if (!currentUser) return null;
   if (view === 'list') {
     return (
@@ -203,7 +202,6 @@ export const Admin: React.FC = () => {
                 </Link>
               </>
             )}
-            <Button variant="outline" onClick={handleLogout}>Logout</Button>
             <Button onClick={handleCreateNew} icon={<Plus className="w-4 h-4"/>}>New Post</Button>
           </div>
         </div>
@@ -270,7 +268,7 @@ export const Admin: React.FC = () => {
     title={doc.title} summary={doc.summary} content={doc.body} editorKey={editorSeed}
     onTitleChange={title => change({ title })} onSummaryChange={summary => change({ summary })} onContentChange={body => change({ body })}
     saveStatus={saveState?.status || 'idle'} statusMessage={message || undefined}
-    onSave={handleSave} onPublish={handleEditorPublish} onDiscard={handleDiscard} onBack={handleBack} onDone={handleBack} onReload={handleReload}
+    onSave={handleSave} onPublish={handleEditorPublish} onDiscard={handleDiscard} onBack={handleBack} onReload={handleReload}
     isPublished={saveState?.draft?.status === 'published'} hasUnpublishedChanges={!!saveState?.dirty || !!saveState?.draft?.hasUnpublishedChanges}
     isBusy={busy} draftUpdatedAt={saveState?.draft?.updatedAt || undefined}
     publishedAt={saveState?.draft?.publishedAt || undefined} publishedUpdatedAt={saveState?.draft?.publishedUpdatedAt || undefined}

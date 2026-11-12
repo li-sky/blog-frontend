@@ -8,7 +8,7 @@ export interface PostEditorShellProps {
   registerContentReader?: (reader: (() => string) | null) => void;
   onTitleChange: (value: string) => void; onSummaryChange: (value: string) => void; onContentChange: (value: string) => void;
   saveStatus: 'idle' | 'dirty' | 'saving' | 'saved' | 'error' | 'conflict'; statusMessage?: string;
-  onSave: () => void; onPublish: () => void; onDiscard: () => void; onBack: () => void; onDone?: () => void; onReload?: () => void;
+  onSave: () => void; onPublish: () => void; onDiscard: () => void; onBack: () => void; onReload?: () => void;
   isPublished: boolean; hasUnpublishedChanges: boolean; isBusy: boolean;
   draftUpdatedAt?: string; publishedAt?: string; publishedUpdatedAt?: string;
 }
@@ -52,12 +52,11 @@ export function PostEditorShell(props: PostEditorShellProps) {
   const label = props.statusMessage || ({ idle:'尚未修改',dirty:'有未保存修改',saving:'正在保存草稿…',saved:'草稿已保存',error:'保存失败，内容保留在本机',conflict:'草稿已在其他位置修改' })[props.saveStatus];
   return <dialog ref={viewportRef} className="post-editor-shell" aria-label="文章编辑器" {...{ closedby: 'closerequest' }} onCancel={event => { event.preventDefault(); if (!busy) run(props.onBack); }}>
     <header className="post-editor-topbar">
-      <button type="button" onClick={()=>run(props.onBack)} className="post-editor-back" aria-label="返回文章列表" disabled={busy}><ArrowLeft size={20}/><span>返回</span></button>
+      <button type="button" onClick={()=>run(props.onBack)} className="post-editor-back" disabled={busy}><ArrowLeft size={20}/><span>保存并返回</span></button>
       <span className={`post-editor-save-state state-${props.saveStatus}`} role="status" aria-live="polite">{props.saveStatus==='saved'?<Check size={15}/>:<Cloud size={15}/>}<span>{label}</span></span>
-      <button type="button" className="post-editor-done" onClick={()=>run(props.onDone || props.onBack)} disabled={busy}>完成</button>
     </header>
     <div className="post-editor-scroll">
-      {(props.saveStatus==='error' || props.saveStatus==='conflict') && <div ref={noticeRef} className="post-editor-notice" role="alert"><p>{label}</p>{props.saveStatus==='conflict' && props.onReload && <button type="button" onClick={props.onReload}>载入服务器草稿</button>}</div>}
+      {(props.saveStatus==='error' || props.saveStatus==='conflict') && <div ref={noticeRef} className="post-editor-notice" role="alert"><p>{label}</p>{props.saveStatus==='error' && <button type="button" onClick={()=>run(props.onSave)} disabled={busy}><Save size={17}/><span>重试保存</span></button>}{props.saveStatus==='conflict' && props.onReload && <button type="button" onClick={props.onReload}>载入服务器草稿</button>}</div>}
       <div className="post-editor-document">
         <textarea ref={titleRef} rows={1} aria-label="文章标题" placeholder="文章标题" disabled={props.isBusy} value={props.title} onChange={event=>props.onTitleChange(event.target.value)} className="post-editor-title" />
         <section className="post-editor-summary">
@@ -69,7 +68,6 @@ export function PostEditorShell(props: PostEditorShellProps) {
     </div>
     <footer className="post-editor-actions">
       <button type="button" className="post-editor-discard" onClick={props.onDiscard} disabled={busy || conflicted || !props.hasUnpublishedChanges}><RotateCcw size={17}/><span>放弃修改</span></button>
-      <button type="button" onClick={()=>run(props.onSave)} disabled={busy || conflicted || props.saveStatus==='saving'}><Save size={17}/><span>保存草稿</span></button>
       <button type="button" className="post-editor-publish" onClick={()=>run(props.onPublish)} disabled={busy || conflicted || (props.isPublished && !props.hasUnpublishedChanges && props.saveStatus!=='dirty')}><Send size={17}/><span>{props.isPublished?'更新发布':'发布'}</span></button>
     </footer>
   </dialog>;

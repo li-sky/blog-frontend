@@ -68,7 +68,7 @@ export function ThemeControls() {
             <span className="palette-tile"><span className="palette-preview" style={{ background: colors.canvas, color: colors.text }} aria-hidden="true"><span className="palette-dots"><i style={{ background: colors.keyword }} /><i style={{ background: colors.string }} /><i style={{ background: colors.number }} /></span><span><b style={{ color: colors.text }}>const </b><b style={{ color: colors.text }}>color</b> = <b style={{ color: colors.text }}>'hello'</b></span><span className="palette-preview-line" style={{ background: colors.border }} /></span><span className="palette-name">{palette.name}{appearance.palette === palette.id && <Check size={16} aria-hidden="true" />}</span><small>{palette.description}</small></span>
           </label>;
         })}</div>
-        <footer><span>自动保存，下次沿用</span><button type="button" onClick={() => setOpen(false)}>完成</button></footer>
+        <footer><span>自动保存，下次沿用</span></footer>
       </section>
     </dialog>
   </>;

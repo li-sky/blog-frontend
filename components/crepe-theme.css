@@ -11,6 +11,10 @@
   translate: 0px;
 }
 
+.post-editor-document .crepe-editor .ProseMirror-focused {
+  --prosemirror-virtual-cursor-color: var(--site-accent);
+}
+
 /* Keep a calm pause at either end of the blink, with a short fade between. */
 @media (prefers-reduced-motion: no-preference) {
   .crepe-editor .ProseMirror-focused .prosemirror-virtual-cursor-animation {

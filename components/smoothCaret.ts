@@ -2,7 +2,9 @@
 export function attachSmoothCaret(root: HTMLElement) {
   if (!Element.prototype.animate || !CSS.supports('translate', '1px 1px')) return () => {};
 
-  const motion = window.matchMedia('(prefers-reduced-motion: no-preference) and (pointer: fine)');
+  // Touch editing uses the same virtual caret; keep native selection and IME
+  // handling intact instead of disabling the visual effect by pointer type.
+  const motion = window.matchMedia('(prefers-reduced-motion: no-preference)');
   let previous: { cursor: HTMLElement; left: number; top: number } | null = null;
   let animation: Animation | undefined;
   let composing = false;

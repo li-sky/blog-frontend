@@ -1,10 +1,11 @@
 import { resourceCardPlugins, insertResourceCard } from './resourceCardPlugin';
 import { commandsCtx } from '@milkdown/core';
-import { clearTextInCurrentBlockCommand, toggleStrongCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
-import { useEffect, useId, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { clearTextInCurrentBlockCommand, createCodeBlockCommand, insertHrCommand, toggleStrongCommand, toggleEmphasisCommand, toggleLinkCommand, turnIntoTextCommand, wrapInBlockquoteCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
+import { insertTableCommand } from '@milkdown/preset-gfm';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
-import { TextSelection } from '@milkdown/prose/state';
+import { TextSelection, type SelectionBookmark } from '@milkdown/prose/state';
 import { insert } from '@milkdown/utils';
 import { api } from '../services/api';
 import { encodeImageVariants } from '../services/imageVariants';
@@ -18,10 +19,19 @@ interface CrepeEditorProps {
   value: string;
   onChange: (markdown: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  onFocusChange?: (focused: boolean) => void;
+  onSelectionChange?: (selection: EditorSelectionState) => void;
+  onReadyChange?: (ready: boolean) => void;
 }
 
-export interface CrepeEditorHandle { getMarkdown: () => string; focus: () => void; }
-export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ value, onChange, onBusyChange }, ref) => {
+export interface EditorSelectionState { hasSelection: boolean; bold: boolean; italic: boolean; }
+export type EditorInsertKind = 'image' | 'attachment' | 'link' | 'heading' | 'list' | 'quote' | 'paragraph' | 'code' | 'table' | 'math' | 'divider';
+export interface CrepeEditorHandle {
+  getMarkdown: () => string; focus: () => void; rememberSelection: () => void;
+  insert: (kind: EditorInsertKind) => void;
+  format: (kind: 'bold' | 'italic' | 'link', href?: string) => void;
+}
+export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ value, onChange, onBusyChange, onFocusChange, onSelectionChange, onReadyChange }, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const crepeRef = useRef<Crepe | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -33,26 +43,39 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
   const initialSourceRef = useRef(value);
   const initialCanonicalRef = useRef<string | null>(null);
   const sourceOutput = (markdown: string) => markdown === initialCanonicalRef.current ? initialSourceRef.current : markdown;
-  const [moreOpen,setMoreOpen] = useState(false);
-  const moreId = useId();
-  const toolsRef = useRef<HTMLDivElement>(null);
-  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const bookmarkRef = useRef<SelectionBookmark | null>(null);
+  const callbacks = useRef({ onFocusChange, onSelectionChange, onReadyChange });
+  callbacks.current = { onFocusChange, onSelectionChange, onReadyChange };
   const [isReady, setIsReady] = useState(false);
   const [initializationError, setInitializationError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => { onBusyChange?.(isUploading); return () => onBusyChange?.(false); }, [isUploading,onBusyChange]);
-  useEffect(() => {
-    if (!moreOpen) return;
-    const closeOutside = (event: PointerEvent) => { if (event.target instanceof Node && !toolsRef.current?.contains(event.target)) setMoreOpen(false); };
-    document.addEventListener('pointerdown', closeOutside);
-    return () => document.removeEventListener('pointerdown', closeOutside);
-  }, [moreOpen]);
-  useImperativeHandle(ref, () => ({ getMarkdown: () => readyRef.current && crepeRef.current ? sourceOutput(crepeRef.current.getMarkdown()) : lastMarkdownRef.current, focus: () => readyRef.current && crepeRef.current?.editor.action(ctx => ctx.get(editorViewCtx).focus()) }), []);
+  const restoreSelection = () => {
+    if (!readyRef.current) return;
+    crepeRef.current?.editor.action(ctx => {
+      const view = ctx.get(editorViewCtx);
+      if (bookmarkRef.current) view.dispatch(view.state.tr.setSelection(bookmarkRef.current.resolve(view.state.doc)));
+    });
+  };
+  useImperativeHandle(ref, () => ({
+    getMarkdown: () => readyRef.current && crepeRef.current ? sourceOutput(crepeRef.current.getMarkdown()) : lastMarkdownRef.current,
+    focus: () => { if (readyRef.current) crepeRef.current?.editor.action(ctx => ctx.get(editorViewCtx).focus()); },
+    rememberSelection: () => { if (readyRef.current) crepeRef.current?.editor.action(ctx => { bookmarkRef.current = ctx.get(editorViewCtx).state.selection.getBookmark(); }); },
+    insert: kind => {
+      if (!readyRef.current || busyRef.current) return;
+      restoreSelection();
+      if (kind === 'image') { imageInputRef.current?.click(); return; }
+      if (kind === 'attachment') { fileInputRef.current?.click(); return; }
+      runCommand(kind);
+    },
+    format: (kind, href) => { if (readyRef.current && !busyRef.current) { restoreSelection(); runCommand(kind, href); } },
+  }), []);
   const emit = (raw: string) => { const markdown = sourceOutput(raw); if (markdown !== lastMarkdownRef.current) { lastMarkdownRef.current = markdown; changeRef.current(markdown); } };
   const uploadPictures = async (files: File[]) => {
     const editor = crepeRef.current?.editor; if (!editor || busyRef.current || !files.length) return;
+    restoreSelection();
     busyRef.current = true; setIsUploading(true); setUploadProgress(0);
     try {
       for (let index=0; index<files.length; index++) {
@@ -64,15 +87,38 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     } catch(error) { if (crepeRef.current?.editor === editor) window.alert(error instanceof Error ? error.message : '图片上传失败'); }
     finally { if (crepeRef.current?.editor === editor) { busyRef.current=false; setIsUploading(false); } }
   };
-  const runMobile = (kind: 'link'|'bold'|'heading'|'list') => {
+  const notifySelection = () => {
+    if (!readyRef.current || !crepeRef.current) return;
+    crepeRef.current.editor.action(ctx => {
+      const { doc, selection, storedMarks } = ctx.get(editorViewCtx).state;
+      bookmarkRef.current = selection.getBookmark();
+      const active = (name: string) => {
+        const mark = doc.type.schema.marks[name];
+        return !!mark && (selection.empty ? (storedMarks || selection.$from.marks()).some(item => item.type === mark) : doc.rangeHasMark(selection.from, selection.to, mark));
+      };
+      callbacks.current.onSelectionChange?.({ hasSelection: selection instanceof TextSelection && !selection.empty, bold: active('strong'), italic: active('emphasis') });
+    });
+  };
+  const runCommand = (kind: string, href?: string) => {
     crepeRef.current?.editor.action(ctx => {
       const commands=ctx.get(commandsCtx);
-      if (kind==='link') insertResourceCard(ctx,{kind:'link'});
+      if (kind==='link' && href) commands.call(toggleLinkCommand.key, { href });
+      else if (kind==='link') insertResourceCard(ctx,{kind:'link'});
       if (kind==='bold') commands.call(toggleStrongCommand.key);
+      if (kind==='italic') commands.call(toggleEmphasisCommand.key);
       if (kind==='heading') commands.call(wrapInHeadingCommand.key,2);
       if (kind==='list') commands.call(wrapInBulletListCommand.key);
+      if (kind==='quote') commands.call(wrapInBlockquoteCommand.key);
+      if (kind==='paragraph') commands.call(turnIntoTextCommand.key);
+      if (kind==='code') commands.call(createCodeBlockCommand.key);
+      if (kind==='table') commands.call(insertTableCommand.key, { row: 3, col: 3 });
+      if (kind==='divider') commands.call(insertHrCommand.key);
+      if (kind==='math') insert('$$\nx^2 + y^2 = z^2\n$$')(ctx);
       ctx.get(editorViewCtx).focus();
-    }); setMoreOpen(false);
+      bookmarkRef.current = ctx.get(editorViewCtx).state.selection.getBookmark();
+    });
+    notifySelection();
+    if (crepeRef.current) emit(crepeRef.current.getMarkdown());
   };
   const escapeMarkdownAlt = (text: string) => text.replace(/[\[\]()]/g, '\\$&');
 
@@ -84,6 +130,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
   const uploadAttachments = async (files: File[]) => {
     const editor = crepeRef.current?.editor;
     if (!editor || busyRef.current) return;
+    restoreSelection();
     busyRef.current = true;
     setIsUploading(true);
     setUploadProgress(0);
@@ -111,6 +158,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     const crepe = new Crepe({
       root: host,
       defaultValue: value || '',
+      features: { [Crepe.Feature.Toolbar]: false },
       featureConfigs: {
         [Crepe.Feature.CodeMirror]: { theme: editorPalette },
         [Crepe.Feature.BlockEdit]: {
@@ -149,7 +197,13 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     crepeRef.current = crepe;
 
     crepe.on((listener) =>
-      listener.markdownUpdated((_, markdown) => {
+      listener.focus(() => callbacks.current.onFocusChange?.(true))
+      .blur(() => callbacks.current.onFocusChange?.(false))
+      // The listener runs while ProseMirror applies a transaction. Read the
+      // resulting view state after that transaction has finished, not its old state.
+      .selectionUpdated(() => { queueMicrotask(() => { if (!disposed) notifySelection(); }); })
+      .updated(() => { queueMicrotask(() => { if (!disposed) notifySelection(); }); })
+      .markdownUpdated((_, markdown) => {
         if (!disposed) emit(markdown);
       })
     );
@@ -169,6 +223,8 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         initialCanonicalRef.current=crepe.getMarkdown();
         lastMarkdownRef.current=initialSourceRef.current;
         setIsReady(true);
+        callbacks.current.onReadyChange?.(true);
+        notifySelection();
       })
       .catch((err) => {
         console.error('Failed to initialize Crepe editor', err);
@@ -242,6 +298,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       container?.removeEventListener('dragover', handleDragOver);
       container?.removeEventListener('drop', handleDrop, true);
       disposed=true; readyRef.current=false;
+      callbacks.current.onReadyChange?.(false);
       detachSmoothCaret();
       crepeRef.current=null;
       host.remove();
@@ -256,13 +313,6 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     }}>
       <input ref={fileInputRef} type="file" multiple hidden onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void uploadAttachments(files); }} />
       <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={event=>{const files=Array.from(event.target.files || []);event.target.value='';void uploadPictures(files);}} />
-      <div ref={toolsRef} className="crepe-mobile-tools" role="group" aria-label="正文插入工具" onMouseDown={event=>event.preventDefault()} onKeyDown={event=>{if(event.key==='Escape' && moreOpen){event.preventDefault();event.stopPropagation();setMoreOpen(false);moreButtonRef.current?.focus();}}}>
-        <button type="button" disabled={!isReady || isUploading} onClick={()=>imageInputRef.current?.click()}>图片</button>
-        <button type="button" disabled={!isReady || isUploading} onClick={()=>fileInputRef.current?.click()}>附件</button>
-        <button type="button" disabled={!isReady || isUploading} onClick={()=>runMobile('link')}>链接卡片</button>
-        <button ref={moreButtonRef} type="button" aria-expanded={moreOpen} aria-controls={moreId} disabled={!isReady || isUploading} onClick={()=>setMoreOpen(open=>!open)}>更多</button>
-        {moreOpen && <div id={moreId} className="crepe-mobile-more"><button type="button" disabled={isUploading} onClick={()=>runMobile('bold')}>粗体</button><button type="button" disabled={isUploading} onClick={()=>runMobile('heading')}>二级标题</button><button type="button" disabled={isUploading} onClick={()=>runMobile('list')}>列表</button></div>}
-      </div>
       {!isReady && (
         <div role={initializationError ? 'alert' : 'status'} className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-dashed border-accent-200 bg-surface/70 text-sm text-accent-500">
           {initializationError ? '编辑器初始化失败，请返回文章列表后重试。' : 'Initializing editor…'}

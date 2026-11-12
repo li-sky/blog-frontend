@@ -35,6 +35,7 @@ export const Admin: React.FC = () => {
   const activeRef = useRef(false);
   const actionRef = useRef(false);
   const editRequestRef = useRef(0);
+  const initialPostIdRef = useRef(Number(new URLSearchParams(window.location.search).get('edit')) || null);
 
   const persist = (state: SaveState) => {
     try {
@@ -56,6 +57,14 @@ export const Admin: React.FC = () => {
       if (!alive) return;
       if (!user.roles.includes('editor') && !user.roles.includes('admin')) { navigate('/'); return; }
       setCurrentUser(user); void fetchPosts();
+      const id = initialPostIdRef.current;
+      initialPostIdRef.current = null;
+      if (id !== null && Number.isSafeInteger(id) && id > 0) {
+        const request = ++editRequestRef.current;
+        void api.posts.getDraft(id).then(draft => {
+          if (alive && request === editRequestRef.current) installSession(draft, readCache(id));
+        }).catch(() => { if (alive) setMessage('无法读取编辑草稿，请重试。'); });
+      }
     }).catch(() => { if (alive) navigate('/login'); });
     return () => { alive = false; editRequestRef.current++; activeRef.current = false; sessionRef.current?.dispose(); };
   }, [navigate]);

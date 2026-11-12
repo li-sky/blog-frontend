@@ -9,6 +9,7 @@ import { insert } from '@milkdown/utils';
 import { api } from '../services/api';
 import { encodeImageVariants } from '../services/imageVariants';
 import { editorPalette } from '../services/editorPalette';
+import { attachSmoothCaret } from './smoothCaret';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './crepe-theme.css';
@@ -101,6 +102,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
   useEffect(() => {
     if (!containerRef.current) return;
     let disposed=false;
+    let detachSmoothCaret = () => {};
     // StrictMode can start a second effect before the first asynchronous create
     // finishes. Give each instance its own host so a late create stays detached.
     const host = document.createElement('div');
@@ -161,6 +163,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
           dom.setAttribute('role', 'textbox');
           dom.setAttribute('aria-label', '文章正文');
           dom.setAttribute('aria-multiline', 'true');
+          detachSmoothCaret = attachSmoothCaret(dom);
         });
         readyRef.current=true;
         initialCanonicalRef.current=crepe.getMarkdown();
@@ -239,6 +242,7 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       container?.removeEventListener('dragover', handleDragOver);
       container?.removeEventListener('drop', handleDrop, true);
       disposed=true; readyRef.current=false;
+      detachSmoothCaret();
       crepeRef.current=null;
       host.remove();
       void crepe.destroy().catch(error => console.error('Failed to destroy Crepe editor', error));

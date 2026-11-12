@@ -6,6 +6,27 @@
   /* box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05); */
 }
 
+.crepe-editor .ProseMirror .prosemirror-virtual-cursor {
+  border-radius: 1px;
+}
+
+/* Keep a calm pause at either end of the blink, with a short fade between. */
+@media (prefers-reduced-motion: no-preference) {
+  .crepe-editor .ProseMirror-focused .prosemirror-virtual-cursor-animation {
+    animation: editor-caret-blink 1.2s ease-in-out .5s infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crepe-editor .ProseMirror-focused .prosemirror-virtual-cursor-animation {
+    animation: none;
+    opacity: 1;
+  }
+}
+@keyframes editor-caret-blink {
+  0%, 35%, 100% { opacity: 1; }
+  55%, 80% { opacity: 0; }
+}
+
 .crepe-editor .crepe-root {
   min-height: 500px;
 }

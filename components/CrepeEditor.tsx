@@ -1,11 +1,11 @@
 import { resourceCardPlugins, insertResourceCard } from './resourceCardPlugin';
 import { commandsCtx } from '@milkdown/core';
-import { clearTextInCurrentBlockCommand, createCodeBlockCommand, insertHrCommand, toggleStrongCommand, toggleEmphasisCommand, toggleLinkCommand, turnIntoTextCommand, wrapInBlockquoteCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
-import { insertTableCommand } from '@milkdown/preset-gfm';
+import { clearTextInCurrentBlockCommand, createCodeBlockCommand, insertHrCommand, toggleStrongCommand, toggleEmphasisCommand, toggleInlineCodeCommand, toggleLinkCommand, turnIntoTextCommand, wrapInBlockquoteCommand, wrapInBulletListCommand, wrapInHeadingCommand } from '@milkdown/preset-commonmark';
+import { insertTableCommand, toggleStrikethroughCommand } from '@milkdown/preset-gfm';
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
-import { TextSelection, type SelectionBookmark } from '@milkdown/prose/state';
+import { NodeSelection, TextSelection, type SelectionBookmark } from '@milkdown/prose/state';
 import { insert } from '@milkdown/utils';
 import { api } from '../services/api';
 import { encodeImageVariants } from '../services/imageVariants';
@@ -24,12 +24,13 @@ interface CrepeEditorProps {
   onReadyChange?: (ready: boolean) => void;
 }
 
-export interface EditorSelectionState { hasSelection: boolean; bold: boolean; italic: boolean; }
+export type EditorFormatKind = 'bold' | 'italic' | 'strikethrough' | 'inlineCode' | 'inlineMath';
+export interface EditorSelectionState { hasSelection: boolean; bold: boolean; italic: boolean; strikethrough: boolean; inlineCode: boolean; inlineMath: boolean; }
 export type EditorInsertKind = 'image' | 'attachment' | 'link' | 'heading' | 'list' | 'quote' | 'paragraph' | 'code' | 'table' | 'math' | 'divider';
 export interface CrepeEditorHandle {
   getMarkdown: () => string; focus: () => void; rememberSelection: () => void;
   insert: (kind: EditorInsertKind) => void;
-  format: (kind: 'bold' | 'italic' | 'link', href?: string) => void;
+  format: (kind: EditorFormatKind | 'link', href?: string) => void;
 }
 export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ value, onChange, onBusyChange, onFocusChange, onSelectionChange, onReadyChange }, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -96,7 +97,9 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
         const mark = doc.type.schema.marks[name];
         return !!mark && (selection.empty ? (storedMarks || selection.$from.marks()).some(item => item.type === mark) : doc.rangeHasMark(selection.from, selection.to, mark));
       };
-      callbacks.current.onSelectionChange?.({ hasSelection: selection instanceof TextSelection && !selection.empty, bold: active('strong'), italic: active('emphasis') });
+      const inlineMath = selection instanceof NodeSelection && selection.node.type.name === 'math_inline';
+      callbacks.current.onSelectionChange?.({ hasSelection: (selection instanceof TextSelection && !selection.empty) || inlineMath,
+        bold: active('strong'), italic: active('emphasis'), strikethrough: active('strike_through'), inlineCode: active('inlineCode'), inlineMath });
     });
   };
   const runCommand = (kind: string, href?: string) => {
@@ -106,6 +109,10 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
       else if (kind==='link') insertResourceCard(ctx,{kind:'link'});
       if (kind==='bold') commands.call(toggleStrongCommand.key);
       if (kind==='italic') commands.call(toggleEmphasisCommand.key);
+      if (kind==='strikethrough') commands.call(toggleStrikethroughCommand.key);
+      if (kind==='inlineCode') commands.call(toggleInlineCodeCommand.key);
+      // Use the same registered command as Crepe's desktop toolbar.
+      if (kind==='inlineMath') commands.call('ToggleLatex');
       if (kind==='heading') commands.call(wrapInHeadingCommand.key,2);
       if (kind==='list') commands.call(wrapInBulletListCommand.key);
       if (kind==='quote') commands.call(wrapInBlockquoteCommand.key);
@@ -158,7 +165,6 @@ export const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps>(({ va
     const crepe = new Crepe({
       root: host,
       defaultValue: value || '',
-      features: { [Crepe.Feature.Toolbar]: false },
       featureConfigs: {
         [Crepe.Feature.CodeMirror]: { theme: editorPalette },
         [Crepe.Feature.BlockEdit]: {

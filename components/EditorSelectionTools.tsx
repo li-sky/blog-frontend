@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { Bold, Italic, Link2 } from 'lucide-react';
-import type { EditorSelectionState } from './CrepeEditor';
+import { Bold, Code, Italic, Link2, Sigma, Strikethrough } from 'lucide-react';
+import type { EditorFormatKind, EditorSelectionState } from './CrepeEditor';
 
-export function EditorSelectionTools({ selection, onFormat, onLink, onFocusChange }: { selection: EditorSelectionState; onFormat: (kind: 'bold' | 'italic') => void; onLink: () => void; onFocusChange: (focused: boolean) => void }) {
+export function EditorSelectionTools({ selection, onFormat, onLink, onFocusChange }: { selection: EditorSelectionState; onFormat: (kind: EditorFormatKind) => void; onLink: () => void; onFocusChange: (focused: boolean) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if ('focusGroup' in HTMLElement.prototype) return;
@@ -25,6 +25,12 @@ export function EditorSelectionTools({ selection, onFormat, onLink, onFocusChang
     <div role="group" aria-label="文字格式">
       <button type="button" title="粗体" aria-label="粗体" aria-pressed={selection.bold} onClick={() => onFormat('bold')}><Bold size={17} aria-hidden="true" /></button>
       <button type="button" title="斜体" aria-label="斜体" aria-pressed={selection.italic} onClick={() => onFormat('italic')}><Italic size={17} aria-hidden="true" /></button>
+      <button type="button" title="删除线" aria-label="删除线" aria-pressed={selection.strikethrough} onClick={() => onFormat('strikethrough')}><Strikethrough size={17} aria-hidden="true" /></button>
+    </div>
+    <span role="separator" aria-orientation="vertical" />
+    <div role="group" aria-label="代码、公式与链接">
+      <button type="button" title="行内代码" aria-label="行内代码" aria-pressed={selection.inlineCode} onClick={() => onFormat('inlineCode')}><Code size={17} aria-hidden="true" /></button>
+      <button type="button" title="行内公式" aria-label="行内公式" aria-pressed={selection.inlineMath} onClick={() => onFormat('inlineMath')}><Sigma size={17} aria-hidden="true" /></button>
       <button type="button" title="添加链接" aria-label="为选区添加链接" onClick={onLink}><Link2 size={17} aria-hidden="true" /></button>
     </div>
   </div>;

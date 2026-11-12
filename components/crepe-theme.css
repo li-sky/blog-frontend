@@ -65,4 +65,5 @@
   .post-editor-document .crepe-editor .ProseMirror h2 { font-size:21px; font-weight:600; line-height:1.5; margin-block:26px 12px; }
   .post-editor-document .crepe-editor .ProseMirror img { max-width:100%; }
   .post-editor-document .crepe-editor .milkdown-block-handle { display:none; }
+  .post-editor-document .crepe-editor .milkdown-toolbar { display:none !important; }
 }
